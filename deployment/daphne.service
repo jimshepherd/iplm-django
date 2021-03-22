@@ -1,0 +1,15 @@
+[Unit]
+Description=MPD Daphne Service
+After=network.target
+[Service]
+Type=simple
+User=mpd    # eg: User = ubuntu
+Group=www-data
+WorkingDirectory=/srv/mpd/mpd-django # eg  /home/ubuntu/myproject
+ExecStart=daphne -p 9001 mpd-django.asgi:application
+#edit myproject
+#If your daphne is not installed globally and is inside your #environment, enter the complete path to daphne
+#ExecStart=/home/ubuntu/myproject/env/bin/daphne -p 9001
+#          myproject.asgi:application
+[Install]
+WantedBy=multi-user.target

@@ -4,7 +4,7 @@
 ## OS Prerequisites
 ### Ubuntu
 ```shell
-sudo apt install python3-dev libpq-dev
+sudo apt install python3-dev libpq-dev gcc
 ```
 ## Python Virtual Environment
 ```shell
@@ -45,4 +45,33 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+```
+
+## Set up initial admin account
+* Add admin user
+```shell
+./manage.py createsuperuser
+```
+Enter admin username and password when prompted
+
+# Deployment
+Based on articles:
+https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/uwsgi/
+https://medium.com/all-about-django/deploying-django-applications-in-production-with-uwsgi-and-nginx-78aac8c0f735
+* Copy project to deployment directory
+```shell
+sudo mkdir /srv/mpd
+cd /srv/mpd
+git clone git@github.com:jimshepherd/mpd-django.git
+git clone git@github.com:jimshepherd/mpd-react.git
+```
+* Install and set up mpd-django following instructions above
+
+
+
+# Notes
+* To make the django app available to remote computers
+Add address of computer django on which django is running to the ALLOWED_HOSTS entry in .env
+```shell
+./manage.py runserver 0.0.0.0:8000
 ```

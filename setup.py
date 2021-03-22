@@ -18,6 +18,7 @@ setup(
         'PyJWT==1.7.1',  # Solves 'str' object has no attribute 'decode'
         'django-graphql-jwt',
         'django-cors-headers',
+        'django-environ',  # Handles secrets stored in .env files
     ],
     extras_require={
       'test': [

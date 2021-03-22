@@ -4,3 +4,8 @@
 # Build and installation
 venv/
 *.egg-info/
+__pycache__/
+*.py[cod]
+
+# Local only files
+mpd_django/.env
