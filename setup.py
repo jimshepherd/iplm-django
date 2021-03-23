@@ -21,8 +21,11 @@ setup(
         'django-environ',  # Handles secrets stored in .env files
     ],
     extras_require={
-      'test': [
-          'coverage',
-      ],
+        'test': [
+            'coverage',
+        ],
+        'deploy': [
+            'daphne',
+        ]
     },
 )

@@ -56,18 +56,54 @@ Enter admin username and password when prompted
 
 # Deployment
 Based on articles:
-https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/uwsgi/
-https://medium.com/all-about-django/deploying-django-applications-in-production-with-uwsgi-and-nginx-78aac8c0f735
+* Create mpd user (optional)
+  ```shell
+   sudo adduser mpd
+  ```
 * Copy project to deployment directory
-```shell
-sudo mkdir /srv/mpd
-cd /srv/mpd
-git clone git@github.com:jimshepherd/mpd-django.git
-git clone git@github.com:jimshepherd/mpd-react.git
-```
-* Install and set up mpd-django following instructions above
+  As mpd user
+  ```shell
+  sudo mkdir /srv/mpd
+  sudo chown mpd.www-data /srv/mpd
+  sudo chmod g+s /srv/mpd
+  cd /srv/mpd
+  git clone https://github.com/jimshepherd/mpd-django.git
+  ```
+* Install and set up mpd-django as mpd user
+  ```shell
+  cd mpd-django/
+  python3 -m venv venv
+  . venv/bin/activate
+  python -m pip install --upgrade pip setuptools
+  pip install -e .deploy
+  ```
+  This command will make sure the deployment dependencies are installed
+* Update parameters in mpd_django/.env for local environment
+* Set up daphne
+  ```shell
+  sudo cp deployment/daphne.service /etc/systemd/system/
+  sudo systemctl enable --now daphne.service
+  ```
+  Check that the daphne service started correctly
+  ```shell
+  systemctl status daphne.service
+  ```
+* Set up nginx
+  ```shell
+  sudo cp deployment/mpd.conf /etc/nginx/sites-available/
+  sudo ln -s /etc/nginx/sites-available/mpd.conf /etc/nginx/sites-enabled/
+  sudo service nginx restart
+  ```
+  Check that the nginx service started correctly
+  ```shell
+  systemctl status nginx.service
+  ```
 
-
+# Update Deployment
+  Run the deploy shell script as mpd user
+  ```shell
+  ./deployment/deploy.sh
+  ```
 
 # Notes
 * To make the django app available to remote computers
