@@ -18,6 +18,6 @@ class Tracker(models.Model):
                                     null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        print('Save args', args)
-        print('Save kwargs', kwargs)
+        # print('Save args', args)
+        # print('Save kwargs', kwargs)
         super().save(*args, **kwargs)

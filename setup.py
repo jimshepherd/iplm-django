@@ -12,7 +12,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'Django',
-        'django-treebeard',  # Tree models
+        'django-tree-queries',  # Tree models
         'psycopg2',
         'graphene-django',
         'PyJWT==1.7.1',  # Solves 'str' object has no attribute 'decode'
@@ -23,6 +23,7 @@ setup(
     extras_require={
         'test': [
             'coverage',
+            'mixer',
         ],
         'deploy': [
             'daphne',

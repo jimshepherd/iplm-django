@@ -1,13 +1,14 @@
 from django.db import models
-from treebeard.mp_tree import MP_Node
+from tree_queries.models import TreeNode
 
 
-# Use django-treebeard
-class Attribute(MP_Node):
+class Attribute(TreeNode):
+    class Meta:
+        ordering = ('name',)
+        unique_together = (('name', 'parent'),)
+
     name = models.TextField()
     description = models.TextField()
-
-    node_order_by = ['name']
 
     def __str__(self):
         return self.name

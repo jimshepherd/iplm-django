@@ -1,4 +1,5 @@
 from django.db import models
+from tree_queries.models import TreeNode
 
 from .tracker import Tracker
 
@@ -9,20 +10,18 @@ class OrganizationType(models.Model):
 
 
 # Add Tracker
-class Organization(Tracker):
+class Organization(TreeNode, Tracker):
     name = models.TextField()
     description = models.TextField(null=True, blank=True)
-    #addresses
+    # addresses from Address
     org_types = models.ManyToManyField(OrganizationType)
-    parent = models.ForeignKey('Organization',
-                               on_delete=models.SET_NULL,
-                               null=True)
 
 
 class Address(Tracker):
     organization = models.ForeignKey(Organization,
                                      related_name='addresses',
-                                     on_delete=models.CASCADE)
+                                     on_delete=models.CASCADE,
+                                     null=True)
     street = models.TextField(null=True)
     street2 = models.TextField(null=True)
     city = models.TextField(null=True)

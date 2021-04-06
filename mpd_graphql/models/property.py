@@ -16,8 +16,8 @@ class Property(Tracker):
     property_type = models.ForeignKey(PropertyType,
                                       on_delete=models.SET_NULL,
                                       null=True)
-    integer_value = models.IntegerField()
-    float_value = models.IntegerField()
+    int_value = models.IntegerField()
+    float_value = models.FloatField()
     text_value = models.TextField()
     unit = models.TextField()
 

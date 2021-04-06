@@ -7,4 +7,3 @@ class BaseInput(graphene.InputObjectType):
 
 class NamedInput(BaseInput):
     name = graphene.String()
-

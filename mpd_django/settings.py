@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',  # Required for GraphiQL
     'mpd_graphql.apps.MpdGraphqlConfig',
-    'treebeard',
+    # 'treebeard',
     'graphene_django',
     'corsheaders',
 ]
@@ -72,7 +72,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             BASE_DIR / 'templates',
-            BASE_DIR / 'venv/lib/python3.8/site-packages/treebeard/templates',
+            # BASE_DIR / 'venv/lib/python3.8/site-packages/treebeard/templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {

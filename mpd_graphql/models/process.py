@@ -1,6 +1,7 @@
 from django.db import models
 
 from .data_set import DataSet
+from .organization import Organization
 from .property import Property
 from .tracker import Tracker
 
@@ -35,6 +36,10 @@ class Process(Tracker):
     method = models.ForeignKey(ProcessMethod,
                                on_delete=models.SET_NULL,
                                null=True)
+
+    producer = models.ForeignKey(Organization,
+                                 on_delete=models.SET_NULL,
+                                 null=True)
 
     # materials_in
     # materials_out
