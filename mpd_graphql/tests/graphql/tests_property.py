@@ -1,15 +1,35 @@
 from mixer.backend.django import mixer
 
-from mpd_graphql.models import Property, PropertyType
+from mpd_graphql.models import Property, PropertySpecification, PropertyType
 
 from .mpd_graphql import MPDGraphQLTestCase
 
+
+PROPERTY_SPECIFICATIONS_QUERY = '''
+query propertySpecifications {
+    propertySpecifications {
+        id
+        name
+        description
+        propertyType {
+            id
+            name
+        }
+        values
+        unit
+    }
+}
+'''
 
 PROPERTIES_QUERY = '''
 query properties {
     properties {
         id
         propertyType {
+            id
+            name
+        }
+        specification {
             id
             name
         }
@@ -40,6 +60,10 @@ mutation updateProperty($property: PropertyInput!) {
                 id
                 name
             }
+            specification {
+                id
+                name
+            }
             intValue
             floatValue
             textValue
@@ -66,12 +90,20 @@ class PropertyUnitTestCase(MPDGraphQLTestCase):
 
     def setUp(self):
         super().setUp()
-        self.property_type1 = mixer.blend(PropertyType)
-        self.property_type2 = mixer.blend(PropertyType)
-        self.property1 = mixer.blend(Property,
-                                     property_type=self.property_type1)
-        self.property2 = mixer.blend(Property,
-                                     property_type=self.property_type2)
+        self.prop_type1 = mixer.blend(PropertyType)
+        self.prop_type2 = mixer.blend(PropertyType)
+        self.prop_spec1 = mixer.blend(PropertySpecification,
+                                      property_type=self.prop_type1,
+                                      values={'UL': 10, 'LL': 0})
+        self.prop_spec2 = mixer.blend(PropertySpecification,
+                                      property_type=self.prop_type2,
+                                      values={'UL': 40, 'LL': 5})
+        self.prop1 = mixer.blend(Property,
+                                 property_type=self.prop_type1,
+                                 specification=self.prop_spec1)
+        self.prop2 = mixer.blend(Property,
+                                 property_type=self.prop_type2,
+                                 specification=self.prop_spec2)
 
     def test_properties(self):
 
@@ -81,6 +113,16 @@ class PropertyUnitTestCase(MPDGraphQLTestCase):
         # print('test_properties data', data)
 
         assert len(data['properties']) == 2
+
+    def test_property_specifications(self):
+
+        response = self.client.execute(PROPERTY_SPECIFICATIONS_QUERY, {})
+        print('test_property_specifications response', response)
+        data = response.data
+        print('test_property_specifications data', data)
+        # print('test_property_specifications data', data)
+
+        assert len(data['propertySpecifications']) == 2
 
     def test_property_types(self):
 
@@ -98,9 +140,12 @@ class PropertyUnitTestCase(MPDGraphQLTestCase):
         unit = 'mm'
         variables = {
             'property': {
-                'id': self.property1.id,
+                'id': self.prop1.id,
                 'propertyType': {
-                    'id': self.property_type2.id,
+                    'id': self.prop_type2.id,
+                },
+                'specification': {
+                    'id': self.prop_spec2.id,
                 },
                 'intValue': int_value,
                 'floatValue': float_value,
@@ -118,7 +163,8 @@ class PropertyUnitTestCase(MPDGraphQLTestCase):
         self.assertEqual(prop['floatValue'], float_value)
         self.assertEqual(prop['textValue'], text_value)
         self.assertEqual(prop['unit'], unit)
-        self.assertEqual(int(prop['propertyType']['id']), self.property_type2.id)
+        self.assertEqual(int(prop['propertyType']['id']), self.prop_type2.id)
+        self.assertEqual(int(prop['specification']['id']), self.prop_spec2.id)
 
     def test_update_property_type(self):
 
@@ -126,7 +172,7 @@ class PropertyUnitTestCase(MPDGraphQLTestCase):
         description = 'Updated description'
         variables = {
             'propertyType': {
-                'id': self.property_type1.id,
+                'id': self.prop_type1.id,
                 'name': name,
                 'description': description,
             }

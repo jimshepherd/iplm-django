@@ -14,17 +14,19 @@ class ProcessMethod(Tracker):
     parent = models.ForeignKey('ProcessMethod',
                                on_delete=models.SET_NULL,
                                null=True)
+    properties = models.ManyToManyField(Property)
 
 
 class ProcessMethodStep(Tracker):
     name = models.TextField()
     description = models.TextField()
+    order = models.IntegerField(default=0)
+
     method = models.ForeignKey(ProcessMethod,
                                related_name='steps',
                                on_delete=models.CASCADE)
     parent = models.ForeignKey('ProcessMethodStep',
                                on_delete=models.CASCADE)
-    order = models.IntegerField(default=0)
     properties = models.ManyToManyField(Property)
 
 
@@ -40,6 +42,7 @@ class Process(Tracker):
     producer = models.ForeignKey(Organization,
                                  on_delete=models.SET_NULL,
                                  null=True)
+    properties = models.ManyToManyField(Property)
 
     # materials_in
     # materials_out
@@ -49,6 +52,8 @@ class Process(Tracker):
 class ProcessStep(Tracker):
     name = models.TextField()
     description = models.TextField()
+    order = models.IntegerField()
+
     process = models.ForeignKey(Process,
                                 related_name='steps',
                                 on_delete=models.CASCADE)
@@ -59,8 +64,6 @@ class ProcessStep(Tracker):
     # Following fields duplicate method steps so might be removable
     parent = models.ForeignKey('ProcessStep',
                                on_delete=models.CASCADE)
-    order = models.IntegerField()
-
     properties = models.ManyToManyField(Property)
 
 

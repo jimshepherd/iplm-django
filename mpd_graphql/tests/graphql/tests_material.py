@@ -1,7 +1,7 @@
 from mixer.backend.django import mixer
 
 from mpd_graphql.models import \
-    Attribute, Identifier, IdentifierType, Property, PropertyType, \
+    Attribute, Identifier, IdentifierType, Property, PropertySpecification, PropertyType, \
     Organization, \
     Material, MaterialSpecification
 
@@ -176,11 +176,19 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
         self.ident2 = mixer.blend(Identifier,
                                   identifier_type=self.ident_type2)
         self.prop_type1 = mixer.blend(PropertyType)
+        self.prop_spec1 = mixer.blend(PropertySpecification,
+                                      property_type=self.prop_type1,
+                                      values={})
         self.prop1 = mixer.blend(Property,
-                                 property_type=self.prop_type1)
+                                 property_type=self.prop_type1,
+                                 specification=self.prop_spec1)
         self.prop_type2 = mixer.blend(PropertyType)
+        self.prop_spec2 = mixer.blend(PropertySpecification,
+                                      property_type=self.prop_type2,
+                                      values={})
         self.prop2 = mixer.blend(Property,
-                                 property_type=self.prop_type2)
+                                 property_type=self.prop_type2,
+                                 specification=self.prop_spec2)
 
         self.org1 = mixer.blend(Organization)
         self.org2 = mixer.blend(Organization)

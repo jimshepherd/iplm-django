@@ -14,8 +14,8 @@ setup(
         'Django',
         'django-tree-queries',  # Tree models
         'psycopg2',
-        'graphene-django',
-        'PyJWT==1.7.1',  # Solves 'str' object has no attribute 'decode'
+        'graphene-django==3.0.0b7',  # 3.0+ required for Django 4
+        'PyJWT',
         'django-graphql-jwt',
         'django-cors-headers',
         'django-environ',  # Handles secrets stored in .env files

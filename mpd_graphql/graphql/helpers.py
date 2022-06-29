@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, List, Optional, Type, TypeVar
 
 from django.db.models import Model
+from django.core.exceptions import FieldDoesNotExist
 
 if TYPE_CHECKING:
     from .base import BaseInput, NamedInput
@@ -84,6 +85,14 @@ def update_model_from_input(model: 'ModelType',
             model_attr_type = model._meta.get_field(key).remote_field.model
         except AttributeError:
             model_attr_type = model._meta.get_field(key).get_internal_type()
+        except FieldDoesNotExist:
+            print(f'Field {key} does not exist in model')
+            continue
+        except Exception as e:
+            print('exception', e)
+            print('Exception type', type(e))
+            continue
+
         print('model_attr_type', model_attr_type)
         input_attr = getattr(graphql_input, key)
         print('input attr', input_attr)

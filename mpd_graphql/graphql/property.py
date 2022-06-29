@@ -4,10 +4,17 @@ from typing import List
 
 from ..models import \
     Property as PropertyModel, \
+    PropertySpecification as PropertySpecificationModel, \
     PropertyType as PropertyTypeModel
 
 from .base import NamedInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
+
+
+# noinspection PyMethodParameters
+class PropertySpecification(DjangoObjectType):
+    class Meta:
+        model = PropertySpecificationModel
 
 
 # noinspection PyMethodParameters
@@ -26,8 +33,16 @@ class PropertyTypeInput(NamedInput):
     description = graphene.String()
 
 
+class PropertySpecificationInput(NamedInput):
+    description = graphene.String()
+    property_type = graphene.Field(PropertyTypeInput)
+    values = graphene.JSONString()
+    unit = graphene.String()
+
+
 class PropertyInput(NamedInput):
     property_type = graphene.Field(PropertyTypeInput)
+    specification = graphene.Field(PropertySpecificationInput)
     int_value = graphene.Int()
     float_value = graphene.Float()
     text_value = graphene.String()
@@ -37,10 +52,14 @@ class PropertyInput(NamedInput):
 # noinspection PyMethodParameters,PyMethodMayBeStatic
 class PropertyQuery(graphene.ObjectType):
     properties = graphene.List(Property)
+    property_specifications = graphene.List(PropertySpecification)
     property_types = graphene.List(PropertyType)
 
     def resolve_properties(root, info) -> List[PropertyModel]:
         return PropertyModel.objects.all()
+
+    def resolve_property_specifications(root, info) -> List[PropertySpecificationModel]:
+        return PropertySpecificationModel.objects.all()
 
     def resolve_property_types(root, info) -> List[PropertyTypeModel]:
         return PropertyTypeModel.objects.all()
@@ -76,6 +95,22 @@ class UpdatePropertyType(graphene.Mutation):
         return UpdatePropertyType(property_type=type_model)
 
 
+class UpdatePropertySpecification(graphene.Mutation):
+    class Arguments:
+        property_specification = PropertySpecificationInput(required=True)
+
+    property_specification = graphene.Field(PropertySpecification)
+
+    def mutate(root, info, property_specification=None):
+        spec_model = get_model_by_id_or_name(PropertySpecificationModel, property_specification)
+        if spec_model is None:
+            spec_model = PropertySpecificationModel()
+        update_model_from_input(spec_model, property_specification)
+        spec_model.save()
+        return UpdatePropertySpecification(property_specification=spec_model)
+
+
 class PropertyMutation(graphene.ObjectType):
     update_property = UpdateProperty.Field()
+    update_property_specification = UpdatePropertySpecification.Field()
     update_property_type = UpdatePropertyType.Field()
