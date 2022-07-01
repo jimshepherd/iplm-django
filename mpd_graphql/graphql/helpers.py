@@ -69,15 +69,18 @@ def update_model_from_input(model: 'ModelType',
         save_attr_models: Boolean whether to save any model instances included as
             attributes to the provided model
         save_only_attrs: A list of names of the attributes that should have their
-            model instances updated updated and saved as well
+            model instances updated and saved as well
 
     Returns:
         None
     """
     print('graphql_input', graphql_input)
-    print('dict', graphql_input.__dict__)
-    print('args', list(graphql_input.keys()))
-    for key in graphql_input.keys():
+    #print('input_type', type(graphql_input))
+    #print('dict', graphql_input.__dict__)
+    #print('_meta.fields', graphql_input._meta.fields)
+    #print('args', list(graphql_input.keys()))
+    print('keys', list(graphql_input._meta.fields.keys()))
+    for key in graphql_input._meta.fields.keys():
         print('key', key)
         try:
             print('model._meta.get_field', model._meta.get_field(key))
@@ -86,11 +89,10 @@ def update_model_from_input(model: 'ModelType',
         except AttributeError:
             model_attr_type = model._meta.get_field(key).get_internal_type()
         except FieldDoesNotExist:
-            print(f'Field {key} does not exist in model')
+            print(f'Field {key} does not exist in model\n')
             continue
         except Exception as e:
-            print('exception', e)
-            print('Exception type', type(e))
+            print(f'Exception {e} of type {type(e)}\n')
             continue
 
         print('model_attr_type', model_attr_type)
@@ -108,7 +110,6 @@ def update_model_from_input(model: 'ModelType',
                 attr_models = []
                 for input_item in input_attr:
                     attr_model = get_model_by_id_or_name(model_attr_type, input_item)
-                    print('attr_model', attr_model)
                     if save_attr_models or (save_only_attrs is not None and key in save_only_attrs):
                         if attr_model is None:
                             attr_model = model_attr_type()
@@ -121,6 +122,7 @@ def update_model_from_input(model: 'ModelType',
                     else:
                         attr_models.append(attr_model)
                 getattr(model, key).set(attr_models, clear=True)
+                print('new list', getattr(model, key).all())
             else:
                 if save_attr_models:
                     attr_model = get_model_by_id_or_name(model_attr_type, input_attr)
@@ -129,7 +131,9 @@ def update_model_from_input(model: 'ModelType',
                     attr_model.save()
                     setattr(model, key, attr_model)
                 else:
-                    if 'id' in input_attr:
+                    if input_attr is None:
+                        input_attr_id = None
+                    elif 'id' in input_attr:
                         print('Adding id as foreign_key directly')
                         input_attr_id = input_attr.id
                     else:
@@ -141,4 +145,4 @@ def update_model_from_input(model: 'ModelType',
             print('isNotModelInstance')
             setattr(model, key, input_attr)
 
-        print('new model attr', getattr(model, key))
+        print(f'New model attr for {key} is {getattr(model, key)}\n')

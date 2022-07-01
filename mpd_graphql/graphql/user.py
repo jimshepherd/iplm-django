@@ -5,6 +5,8 @@ from graphql import GraphQLError
 import graphql_jwt
 from graphql_jwt.shortcuts import create_refresh_token, get_token
 
+from .base import NamedInput
+
 
 UserModel = get_user_model()
 
@@ -12,6 +14,15 @@ UserModel = get_user_model()
 class User(DjangoObjectType):
     class Meta:
         model = get_user_model()
+
+    name = graphene.String()
+
+    def resolve_name(self, info):
+        return self.get_full_name()
+
+
+class UserInput(NamedInput):
+    pass
 
 
 # noinspection PyMethodParameters,PyMethodMayBeStatic

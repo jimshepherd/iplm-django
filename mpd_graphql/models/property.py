@@ -40,4 +40,6 @@ class Property(Tracker):
     def __str__(self):
         if self.property_type is not None:
             return self.property_type.name
+        if self.specification is not None:
+            return self.specification.__str__()
         return ''

@@ -103,7 +103,8 @@ class ProcessUnitTestCase(MPDGraphQLTestCase):
     def test_processes(self):
 
         response = self.client.execute(PROCESSES_QUERY, {})
-        # print('test_processes response', response)
+        if response.errors is not None:
+            print('test_processes response', response)
         data = response.data
         # print('test_processes data', data)
 
@@ -112,7 +113,8 @@ class ProcessUnitTestCase(MPDGraphQLTestCase):
     def test_process_methods(self):
 
         response = self.client.execute(PROCESS_METHODS_QUERY, {})
-        #print('test_process_methods response', response)
+        if response.errors is not None:
+            print('test_process_methods response', response)
         data = response.data
         # print('test_process_methods data', data)
 
@@ -136,7 +138,8 @@ class ProcessUnitTestCase(MPDGraphQLTestCase):
             }
         }
         response = self.client.execute(UPDATE_PROCESS_MUTATION, variables)
-        # print('test_update_process response', response)
+        if response.errors is not None:
+            print('test_update_process response', response)
         data = response.data
         # print('test_update_process data', data)
 
@@ -165,6 +168,8 @@ class ProcessUnitTestCase(MPDGraphQLTestCase):
             }
         }
         response = self.client.execute(UPDATE_PROCESS_METHOD_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_process_method response', response)
         data = response.data
         # print('test_update_process_method data', data)
 

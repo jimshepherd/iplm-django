@@ -11,7 +11,8 @@ from ..models import \
 from .base import NamedInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
 from .organization import OrganizationInput
-from .property import PropertyInput
+from .property import PropertyInput, PropertySpecificationInput
+from .user import UserInput
 
 
 # noinspection PyMethodParameters
@@ -42,21 +43,25 @@ class ProcessMethodInput(NamedInput):
     description = graphene.String()
     version = graphene.String()
     parent = graphene.InputField(lambda: ProcessMethodInput)
+    properties = graphene.List(PropertyInput)
+    property_specs = graphene.List(PropertySpecificationInput)
 
 
 class ProcessMethodStepInput(NamedInput):
     description = graphene.String()
-    version = graphene.String()
+    order = graphene.Int()
     method = graphene.InputField(ProcessMethodInput)
     parent = graphene.InputField(lambda: ProcessMethodStepInput)
-    order = graphene.Int()
     properties = graphene.List(PropertyInput)
+    property_specs = graphene.List(PropertySpecificationInput)
 
 
 class ProcessInput(NamedInput):
     description = graphene.String()
     method = graphene.InputField(ProcessMethodInput)
+    operator = graphene.InputField(UserInput)
     producer = graphene.InputField(OrganizationInput)
+    properties = graphene.List(PropertyInput)
     # process_steps
     # materials_in
     # materials_out
@@ -64,10 +69,10 @@ class ProcessInput(NamedInput):
 
 class ProcessStepInput(NamedInput):
     description = graphene.String()
+    order = graphene.Int()
     process = graphene.InputField(ProcessInput)
     method_step = graphene.InputField(ProcessMethodStepInput)
     parent = graphene.InputField(lambda: ProcessStepInput)
-    order = graphene.Int()
     properties = graphene.List(PropertyInput)
 
 

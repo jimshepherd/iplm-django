@@ -1,8 +1,11 @@
+
 import graphene
 from graphene_django import DjangoObjectType
 from typing import List
 
 from ..models import \
+    ProcessMethod as ProcessMethodModel, \
+    Process as ProcessModel, \
     Property as PropertyModel, \
     PropertySpecification as PropertySpecificationModel, \
     PropertyType as PropertyTypeModel
@@ -10,6 +13,7 @@ from ..models import \
 from .base import NamedInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
 from .property import PropertySpecification, PropertyType
+from .user import UserInput
 
 
 # noinspection PyMethodParameters
@@ -66,9 +70,58 @@ class MICValueInput(NamedInput):
     text_value = graphene.String()
     unit = graphene.String()
 
-    # Hack to allow mic_type to be copied to property_type in update_model_from_input()
+    # Hack to allow mic to be copied to specification in update_model_from_input()
     # property_type = mic_type
     specification = mic
+
+
+# noinspection PyMethodParameters
+class ProductSpecification(DjangoObjectType):
+    class Meta:
+        model = ProcessMethodModel
+
+    mics = graphene.List(MIC)
+
+    def resolve_mics(self, info):
+        return self.property_specs.all()
+
+
+# noinspection PyMethodParameters
+class ProductMeasurement(DjangoObjectType):
+    class Meta:
+        model = ProcessModel
+
+    specification = graphene.Field(ProductSpecification)
+    mic_values = graphene.List(MICValue)
+
+    def resolve_specification(self, info):
+        return self.method
+
+    def resolve_mic_values(self, info):
+        return self.properties.all()
+
+
+class ProductSpecificationInput(NamedInput):
+    description = graphene.String()
+    version = graphene.String()
+    # parent = graphene.InputField(lambda: ProductSpecificationInput)
+    # properties = graphene.List(PropertyInput)
+    mics = graphene.List(MICInput)
+
+    # Hack to allow mics to be copied to property_specs in update_model_from_input()
+    property_specs = mics
+
+
+class ProductMeasurementInput(NamedInput):
+    description = graphene.String()
+    specification = graphene.Field(ProductSpecificationInput)
+    operator = graphene.Field(UserInput)
+    # producer = graphene.Field(OrganizationInput)
+    mic_values = graphene.List(MICValueInput)
+
+    # Hack to allow mic_values to be copied to properties in update_model_from_input()
+    method = specification
+    properties = mic_values
 
 
 # noinspection PyMethodParameters,PyMethodMayBeStatic
@@ -76,6 +129,8 @@ class MICQuery(graphene.ObjectType):
     mic_types = graphene.List(MICType)
     mic_values = graphene.List(MICValue)
     mics = graphene.List(MIC)
+    product_specifications = graphene.List(ProductSpecification)
+    product_measurements = graphene.List(ProductMeasurement)
 
     def resolve_mic_values(root, info) -> List[PropertyModel]:
         # Add filters for MIC Property Types
@@ -88,6 +143,14 @@ class MICQuery(graphene.ObjectType):
     def resolve_mic_types(root, info) -> List[PropertyTypeModel]:
         # Add filters for MIC Property Types
         return PropertyTypeModel.objects.all()
+
+    def resolve_product_specifications(root, info) -> List[ProcessMethodModel]:
+        # Add filters for Product Specification Process Types
+        return ProcessMethodModel.objects.all()
+
+    def resolve_product_measurements(root, info) -> List[ProcessModel]:
+        # Add filters for Product Specification Process Types
+        return ProcessModel.objects.all()
 
 
 class UpdateMIC(graphene.Mutation):
@@ -115,17 +178,14 @@ class UpdateMICValue(graphene.Mutation):
     mic_value = graphene.Field(MICValue)
 
     def mutate(root, info, mic_value=None):
-        print('mutating')
         value_model = get_model_by_id_or_name(PropertyModel, mic_value)
         if value_model is None:
             value_model = PropertyModel()
 
-        print('model exists')
         # mic_value.property_type = mic_value.mic_type
         mic_value.specification = mic_value.mic
 
         update_model_from_input(value_model, mic_value)
-        print('Done!')
         value_model.save()
         return UpdateMICValue(mic_value=value_model)
 
@@ -145,7 +205,46 @@ class UpdateMICType(graphene.Mutation):
         return UpdateMICType(mic_type=type_model)
 
 
+class UpdateProductSpecification(graphene.Mutation):
+    class Arguments:
+        product_specification = ProductSpecificationInput(required=True)
+
+    product_specification = graphene.Field(ProductSpecification)
+
+    def mutate(root, info, product_specification=None):
+        product_spec_model = get_model_by_id_or_name(ProcessMethodModel, product_specification)
+        if product_spec_model is None:
+            product_spec_model = ProcessMethodModel()
+
+        product_specification.property_specs = product_specification.mics
+
+        update_model_from_input(product_spec_model, product_specification)
+        product_spec_model.save()
+        return UpdateProductSpecification(product_specification=product_spec_model)
+
+
+class UpdateProductMeasurement(graphene.Mutation):
+    class Arguments:
+        product_measurement = ProductMeasurementInput(required=True)
+
+    product_measurement = graphene.Field(ProductMeasurement)
+
+    def mutate(root, info, product_measurement=None):
+        measurement_model = get_model_by_id_or_name(ProcessModel, product_measurement)
+        if measurement_model is None:
+            measurement_model = ProcessModel()
+
+        product_measurement.method = product_measurement.specification
+        product_measurement.properties = product_measurement.mic_values
+
+        update_model_from_input(measurement_model, product_measurement)
+        measurement_model.save()
+        return UpdateProductMeasurement(product_measurement=measurement_model)
+
+
 class MICMutation(graphene.ObjectType):
     update_mic = UpdateMIC.Field()
     update_mic_type = UpdateMICType.Field()
     update_mic_value = UpdateMICValue.Field()
+    update_product_specification = UpdateProductSpecification.Field()
+    update_product_measurement = UpdateProductMeasurement.Field()

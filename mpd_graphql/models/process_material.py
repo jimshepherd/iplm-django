@@ -11,7 +11,7 @@ class ProcessMaterial(Tracker):
                                 related_name='materials_in',
                                 on_delete=models.CASCADE)
     process_step = models.ForeignKey(ProcessStep,
-                                     related_name='materials_in',
+                                     related_name='material_specifications_in',
                                      on_delete=models.CASCADE,
                                      null=True)
     material = models.ForeignKey(Material,

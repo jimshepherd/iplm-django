@@ -1,9 +1,18 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 from .data_set import DataSet
 from .organization import Organization
-from .property import Property
+from .property import Property, PropertySpecification
 from .tracker import Tracker
+
+
+class ProcessType(models.Model):
+    name = models.TextField()
+    description = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
 
 
 class ProcessMethod(Tracker):
@@ -14,7 +23,13 @@ class ProcessMethod(Tracker):
     parent = models.ForeignKey('ProcessMethod',
                                on_delete=models.SET_NULL,
                                null=True)
+    process_type = models.ForeignKey(ProcessType,
+                                     on_delete=models.SET_NULL,
+                                     null=True)
     properties = models.ManyToManyField(Property)
+    property_specs = models.ManyToManyField(PropertySpecification)
+
+    # steps
 
 
 class ProcessMethodStep(Tracker):
@@ -28,6 +43,7 @@ class ProcessMethodStep(Tracker):
     parent = models.ForeignKey('ProcessMethodStep',
                                on_delete=models.CASCADE)
     properties = models.ManyToManyField(Property)
+    property_specs = models.ManyToManyField(PropertySpecification)
 
 
 # Add Tracker
@@ -35,10 +51,16 @@ class Process(Tracker):
     name = models.TextField()
     description = models.TextField(null=True)
 
+    process_type = models.ForeignKey(ProcessType,
+                                     on_delete=models.SET_NULL,
+                                     null=True)
     method = models.ForeignKey(ProcessMethod,
                                on_delete=models.SET_NULL,
                                null=True)
 
+    operator = models.ForeignKey(User,
+                                 on_delete=models.SET_NULL,
+                                 null=True)
     producer = models.ForeignKey(Organization,
                                  on_delete=models.SET_NULL,
                                  null=True)
