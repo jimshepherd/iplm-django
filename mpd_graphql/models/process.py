@@ -1,6 +1,8 @@
 from django.db import models
+from tree_queries.models import TreeNode
 
 from .data_set import DataSet
+from .equipment import Equipment, EquipmentType
 from .organization import Organization
 from .property import Property, PropertySpecification
 from .tracker import Tracker
@@ -15,24 +17,35 @@ class ProcessType(models.Model):
         return self.name
 
 
-class ProcessMethod(Tracker):
+class ProcessMethod(TreeNode, Tracker):
+    class Meta:
+        ordering = ('name',)
+        unique_together = (('name', 'parent'),)
+
     name = models.TextField()
     description = models.TextField(null=True)
     version = models.TextField(null=True)
 
-    parent = models.ForeignKey('ProcessMethod',
-                               on_delete=models.SET_NULL,
-                               null=True)
     process_type = models.ForeignKey(ProcessType,
                                      on_delete=models.SET_NULL,
                                      null=True)
+    equipment_type = models.ForeignKey(EquipmentType,
+                                       on_delete=models.SET_NULL,
+                                       null=True)
     properties = models.ManyToManyField(Property)
     property_specs = models.ManyToManyField(PropertySpecification)
 
     # steps
 
+    def __str__(self):
+        return self.name
 
-class ProcessMethodStep(Tracker):
+
+class ProcessMethodStep(TreeNode, Tracker):
+    class Meta:
+        ordering = ('name',)
+        unique_together = (('name', 'parent'),)
+
     name = models.TextField()
     description = models.TextField()
     order = models.IntegerField(default=0)
@@ -40,13 +53,13 @@ class ProcessMethodStep(Tracker):
     method = models.ForeignKey(ProcessMethod,
                                related_name='steps',
                                on_delete=models.CASCADE)
-    parent = models.ForeignKey('ProcessMethodStep',
-                               on_delete=models.CASCADE)
     properties = models.ManyToManyField(Property)
     property_specs = models.ManyToManyField(PropertySpecification)
 
+    def __str__(self):
+        return self.name
 
-# Add Tracker
+
 class Process(Tracker):
     name = models.TextField()
     description = models.TextField(null=True)
@@ -58,10 +71,13 @@ class Process(Tracker):
                                on_delete=models.SET_NULL,
                                null=True)
 
-    operator = models.ForeignKey(User,
+    producer = models.ForeignKey(Organization,
                                  on_delete=models.SET_NULL,
                                  null=True)
-    producer = models.ForeignKey(Organization,
+    equipment = models.ForeignKey(Equipment,
+                                  on_delete=models.SET_NULL,
+                                  null=True)
+    operator = models.ForeignKey(User,
                                  on_delete=models.SET_NULL,
                                  null=True)
     properties = models.ManyToManyField(Property)
@@ -70,8 +86,15 @@ class Process(Tracker):
     # materials_out
     # process_steps
 
+    def __str__(self):
+        return self.name
 
-class ProcessStep(Tracker):
+
+class ProcessStep(TreeNode, Tracker):
+    class Meta:
+        ordering = ('name',)
+        unique_together = (('name', 'parent'),)
+
     name = models.TextField()
     description = models.TextField()
     order = models.IntegerField()
@@ -84,9 +107,12 @@ class ProcessStep(Tracker):
                                     null=True)
 
     # Following fields duplicate method steps so might be removable
-    parent = models.ForeignKey('ProcessStep',
-                               on_delete=models.CASCADE)
+    # parent = models.ForeignKey('ProcessStep',
+    #                            on_delete=models.CASCADE)
     properties = models.ManyToManyField(Property)
+
+    def __str__(self):
+        return self.name
 
 
 class ProcessDataFile(Tracker):
