@@ -4,10 +4,68 @@ import json
 from mixer.backend.django import mixer
 
 from mpd_graphql.models import \
+    Identifier, IdentifierType, \
+    Material, MaterialSpecification, MaterialType, \
     Process, ProcessMethod, ProcessType, \
     Property, PropertySpecification, PropertyType
 
 from .mpd_graphql import MPDGraphQLTestCase
+
+
+PRODUCTS_QUERY = '''
+query products {
+    products {
+        id
+        name
+        description
+        version
+        productType {
+            id
+            name
+        }
+    }
+}
+'''
+
+PRODUCED_PRODUCTS_QUERY = '''
+query producedProducts {
+    producedProducts {
+        id
+        name
+        description
+        product {
+            id
+            name
+            productType {
+                id
+                name
+            }
+        }
+        process {
+            id
+            name
+        }
+        identifiers {
+            id
+            identifierType {
+                id
+                name
+            }
+            value
+        }
+    }
+}
+'''
+
+PRODUCT_TYPES_QUERY = '''
+query productTypes {
+    productTypes {
+        id
+        name
+        description
+    }
+}
+'''
 
 
 MICS_QUERY = '''
@@ -99,6 +157,67 @@ query productMeasurements {
             floatValue
             textValue
             unit
+        }
+    }
+}
+'''
+
+UPDATE_PRODUCT_MUTATION = '''
+mutation updateProduct($product: ProductInput!) {
+    updateProduct(product: $product) {
+        product {
+            id
+            name
+            description
+            version
+            productType {
+                id
+                name
+            }
+        }
+    }
+}
+'''
+
+UPDATE_PRODUCED_PRODUCT_MUTATION = '''
+mutation updateProducedProduct($producedProduct: ProducedProductInput!) {
+    updateProducedProduct(producedProduct: $producedProduct) {
+        producedProduct {
+            id
+            name
+            description
+            product {
+                id
+                name
+                productType {
+                    id
+                    name
+                }
+            }
+            process {
+                id
+                name
+            }
+            identifiers {
+                id
+                identifierType {
+                    id
+                    name
+                }
+                value
+            }
+        }
+    }
+}
+'''
+
+UPDATE_PRODUCT_TYPE_MUTATION = '''
+mutation updateProductType($productType: ProductTypeInput!) {
+    updateProductType(productType: $productType) {
+        productType {
+            id
+            name
+            description
         }
     }
 }
@@ -215,6 +334,58 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         super().setUp()
         self.user1 = mixer.blend(User)
         self.user2 = mixer.blend(User)
+        self.process1 = mixer.blend(Process)
+        self.process2 = mixer.blend(Process)
+        self.prod_type = mixer.blend(MaterialType,
+                                     name='Product',
+                                     description='Product type')
+        self.prod1 = mixer.blend(MaterialSpecification,
+                                 name='20oz Water Bottle',
+                                 description='20oz Boston Round with 38mm neck',
+                                 version='1.0',
+                                 material_type=self.prod_type,
+                                 attributes=[],
+                                 identifiers=[],
+                                 properties=[],
+                                 supplier=None)
+        self.prod2 = mixer.blend(MaterialSpecification,
+                                 name='38mm Closure',
+                                 description='38mm twist-off closure',
+                                 version='2.0',
+                                 material_type=self.prod_type,
+                                 attributes=[],
+                                 identifiers=[],
+                                 properties=[],
+                                 supplier=None)
+        self.ident_type1 = mixer.blend(IdentifierType,
+                                       name='Lot',
+                                       description='Lot identifier')
+        self.ident_type2 = mixer.blend(IdentifierType,
+                                       name='Batch',
+                                       description='Batch identifier')
+        self.ident1 = mixer.blend(Identifier,
+                                  identifier_type=self.ident_type1,
+                                  value='123')
+        self.ident2 = mixer.blend(Identifier,
+                                  identifier_type=self.ident_type2,
+                                  value='456')
+        self.produced_prod1 = mixer.blend(Material,
+                                          description='20oz Water Bottle, Lot 1234',
+                                          specification=self.prod1,
+                                          process=self.process1,
+                                          process_step=None,
+                                          attributes=[],
+                                          identifiers=[self.ident1],
+                                          properties=[])
+        self.produced_prod2 = mixer.blend(Material,
+                                          description='38mm Closure, Lot 2345',
+                                          specification=self.prod2,
+                                          process=self.process2,
+                                          process_step=None,
+                                          attributes=[],
+                                          identifiers=[self.ident2],
+                                          properties=[])
+
         self.mic_type1 = mixer.blend(PropertyType,
                                      name='MIC Bidirectional',
                                      description='Quantitative Bidirectional MIC type')
@@ -308,6 +479,35 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                                       properties=[self.mic_value2, self.mic_value3])
 
 
+    def test_product_types(self):
+
+        response = self.client.execute(PRODUCT_TYPES_QUERY, {})
+        if response.errors is not None:
+            print('test_product_types response', response)
+        data = response.data
+        # print('test_product_types data', data)
+
+        assert len(data['productTypes']) == 1
+
+    def test_products(self):
+
+        response = self.client.execute(PRODUCTS_QUERY, {})
+        if response.errors is not None:
+            print('test_products response', response)
+        data = response.data
+        # print('test_products data', data)
+
+        assert len(data['products']) == 2
+
+    def test_produced_products(self):
+
+        response = self.client.execute(PRODUCED_PRODUCTS_QUERY, {})
+        if response.errors is not None:
+            print('test_produced_products response', response)
+        data = response.data
+        # print('test_produced_products data', data)
+
+        assert len(data['producedProducts']) == 2
 
     def test_mic_types(self):
 
@@ -358,6 +558,88 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         # print('test_product_measurements data', data)
 
         assert len(data['productMeasurements']) == 2
+
+
+    def test_update_product(self):
+
+        name = 'New name'
+        description = 'New description'
+        variables = {
+            'product': {
+                'id': self.prod1.id,
+                'name': name,
+                'description': description,
+                'productType': {
+                    'id': self.prod_type.id,
+                },
+            }
+        }
+        response = self.client.execute(UPDATE_PRODUCT_MUTATION, variables)
+        if response.errors is not None:
+            print('variables', variables)
+            print('test_update_product response', response)
+        data = response.data
+        # print('test_update_product data', data)
+
+        prod = data['updateProduct']['product']
+        self.assertEqual(prod['name'], name)
+        self.assertEqual(prod['description'], description)
+        self.assertEqual(int(prod['productType']['id']), self.prod_type.id)
+
+    def test_update_product_type(self):
+
+        name = 'Updated Name'
+        description = 'Updated description'
+        variables = {
+            'productType': {
+                'id': self.prod_type.id,
+                'name': name,
+                'description': description,
+            }
+        }
+        response = self.client.execute(UPDATE_PRODUCT_TYPE_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_product_type response', response)
+        data = response.data
+        # print('test_update_product_type data', data)
+
+        product_type = data['updateProductType']['productType']
+        self.assertEqual(product_type['name'], name)
+        self.assertEqual(product_type['description'], description)
+
+    def test_update_produced_product(self):
+
+        name = 'Updated Name'
+        description = 'Updated description'
+        variables = {
+            'producedProduct': {
+                'id': self.produced_prod1.id,
+                'name': name,
+                'description': description,
+                'product': {
+                    'id': self.prod2.id,
+                },
+                'process': {
+                    'id': self.process2.id,
+                },
+                'identifiers': [{
+                    'id': self.ident2.id,
+                }],
+            }
+        }
+        response = self.client.execute(UPDATE_PRODUCED_PRODUCT_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_produced_product response', response)
+        data = response.data
+        # print('test_update_produced_product data', data)
+
+        prod = data['updateProducedProduct']['producedProduct']
+        self.assertEqual(prod['name'], name)
+        self.assertEqual(prod['description'], description)
+        self.assertEqual(int(prod['product']['id']), self.prod2.id)
+        self.assertEqual(int(prod['process']['id']), self.process2.id)
+        ident1 = prod['identifiers'][0]
+        self.assertEqual(int(ident1['id']), self.ident2.id)
 
     def test_update_mic(self):
 

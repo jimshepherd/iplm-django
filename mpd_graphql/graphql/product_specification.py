@@ -4,6 +4,9 @@ from graphene_django import DjangoObjectType
 from typing import List
 
 from ..models import \
+    MaterialSpecification as MaterialSpecificationModel, \
+    Material as MaterialModel, \
+    MaterialType as MaterialTypeModel, \
     ProcessMethod as ProcessMethodModel, \
     Process as ProcessModel, \
     Property as PropertyModel, \
@@ -11,9 +14,39 @@ from ..models import \
     PropertyType as PropertyTypeModel
 
 from .base import NamedInput
+from .equipment import EquipmentInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
-from .property import PropertySpecification, PropertyType
+from .identifier import IdentifierInput
+from .process import ProcessInput
+# from .property import PropertyType
 from .user import UserInput
+
+
+# noinspection PyMethodParameters
+class ProductType(DjangoObjectType):
+    class Meta:
+        model = MaterialTypeModel
+
+
+# noinspection PyMethodParameters
+class Product(DjangoObjectType):
+    class Meta:
+        model = MaterialSpecificationModel
+
+    product_type = graphene.Field(ProductType)
+
+    def resolve_product_type(self, info):
+        return self.material_type
+
+# noinspection PyMethodParameters
+class ProducedProduct(DjangoObjectType):
+    class Meta:
+        model = MaterialModel
+
+    product = graphene.Field(Product)
+
+    def resolve_product(self, info):
+        return self.specification
 
 
 # noinspection PyMethodParameters
@@ -46,6 +79,32 @@ class MICValue(DjangoObjectType):
 
     # def resolve_mic_type(self, info):
     #     return self.property_type
+
+class ProductTypeInput(NamedInput):
+    description = graphene.String()
+
+
+class ProductInput(NamedInput):
+    description = graphene.String()
+    version = graphene.String()
+
+    product_type = graphene.Field(ProductTypeInput)
+
+    process = graphene.Field(ProcessInput)
+
+    # Hack to allow product_type to be copied to material_type in update_model_from_input()
+    material_type = product_type
+
+
+class ProducedProductInput(NamedInput):
+    description = graphene.String()
+    product = graphene.Field(ProductInput)
+    process = graphene.Field(ProcessInput)
+
+    identifiers = graphene.List(IdentifierInput)
+
+    # Hack to allow product to be copied to material in update_model_from_input()
+    specification = product
 
 
 class MICTypeInput(NamedInput):
@@ -126,31 +185,97 @@ class ProductMeasurementInput(NamedInput):
 
 # noinspection PyMethodParameters,PyMethodMayBeStatic
 class MICQuery(graphene.ObjectType):
+    product_types = graphene.List(ProductType)
+    products = graphene.List(Product)
+    produced_products = graphene.List(ProducedProduct)
     mic_types = graphene.List(MICType)
     mic_values = graphene.List(MICValue)
     mics = graphene.List(MIC)
     product_specifications = graphene.List(ProductSpecification)
     product_measurements = graphene.List(ProductMeasurement)
 
+    def resolve_product_types(root, info) -> List[MaterialTypeModel]:
+        # TODO: Add filters for Product Material Types
+        return MaterialTypeModel.objects.all()
+
+    def resolve_products(root, info) -> List[MaterialSpecificationModel]:
+        # TODO: Add filters for Product Material Types
+        return MaterialSpecificationModel.objects.all()
+
+    def resolve_produced_products(root, info) -> List[MaterialModel]:
+        # TODO: Add filters for Product Material Types
+        return MaterialModel.objects.all()
+
     def resolve_mic_values(root, info) -> List[PropertyModel]:
-        # Add filters for MIC Property Types
+        # TODO: Add filters for MIC Property Types
         return PropertyModel.objects.all()
 
     def resolve_mics(root, info) -> List[PropertySpecificationModel]:
-        # Add filters for MIC Property Types
+        # TODO: Add filters for MIC Property Types
         return PropertySpecificationModel.objects.all()
 
     def resolve_mic_types(root, info) -> List[PropertyTypeModel]:
-        # Add filters for MIC Property Types
+        # TODO: Add filters for MIC Property Types
         return PropertyTypeModel.objects.all()
 
     def resolve_product_specifications(root, info) -> List[ProcessMethodModel]:
-        # Add filters for Product Specification Process Types
-        return ProcessMethodModel.objects.all()
+        q = ProcessMethodModel.objects.filter(process_type__name='Product Specification')
+        return q.all()
 
     def resolve_product_measurements(root, info) -> List[ProcessModel]:
-        # Add filters for Product Specification Process Types
-        return ProcessModel.objects.all()
+        q = ProcessModel.objects.filter(process_type__name='Product Specification')
+        return q.all()
+
+
+class UpdateProduct(graphene.Mutation):
+    class Arguments:
+        product = ProductInput(required=True)
+
+    product = graphene.Field(Product)
+
+    def mutate(root, info, product=None):
+        product_model = get_model_by_id_or_name(MaterialSpecificationModel, product)
+        if product_model is None:
+            product_model = MaterialSpecificationModel()
+
+        product.material_type = product.product_type
+
+        update_model_from_input(product_model, product)
+        product_model.save()
+        return UpdateProduct(product=product_model)
+
+
+class UpdateProducedProduct(graphene.Mutation):
+    class Arguments:
+        produced_product = ProducedProductInput(required=True)
+
+    produced_product = graphene.Field(ProducedProduct)
+
+    def mutate(root, info, produced_product=None):
+        product_model = get_model_by_id_or_name(MaterialModel, produced_product)
+        if product_model is None:
+            product_model = MaterialModel()
+
+        produced_product.specification = produced_product.product
+
+        update_model_from_input(product_model, produced_product)
+        product_model.save()
+        return UpdateProducedProduct(produced_product=product_model)
+
+
+class UpdateProductType(graphene.Mutation):
+    class Arguments:
+        product_type = ProductTypeInput(required=True)
+
+    product_type = graphene.Field(ProductType)
+
+    def mutate(root, info, product_type=None):
+        type_model = get_model_by_id_or_name(MaterialTypeModel, product_type)
+        if type_model is None:
+            type_model = MaterialTypeModel()
+        update_model_from_input(type_model, product_type)
+        type_model.save()
+        return UpdateProductType(product_type=type_model)
 
 
 class UpdateMIC(graphene.Mutation):
@@ -243,6 +368,9 @@ class UpdateProductMeasurement(graphene.Mutation):
 
 
 class MICMutation(graphene.ObjectType):
+    update_product = UpdateProduct.Field()
+    update_product_type = UpdateProductType.Field()
+    update_produced_product = UpdateProducedProduct.Field()
     update_mic = UpdateMIC.Field()
     update_mic_type = UpdateMICType.Field()
     update_mic_value = UpdateMICValue.Field()
