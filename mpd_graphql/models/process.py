@@ -1,10 +1,10 @@
-from django.contrib.auth.models import User
 from django.db import models
 
 from .data_set import DataSet
 from .organization import Organization
 from .property import Property, PropertySpecification
 from .tracker import Tracker
+from .user import User
 
 
 class ProcessType(models.Model):

@@ -1,19 +1,17 @@
-from django.contrib.auth import get_user_model
 import graphene
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 import graphql_jwt
 from graphql_jwt.shortcuts import create_refresh_token, get_token
 
+from ..models import User as UserModel
+
 from .base import NamedInput
-
-
-UserModel = get_user_model()
 
 
 class User(DjangoObjectType):
     class Meta:
-        model = get_user_model()
+        model = UserModel
 
     name = graphene.String()
 

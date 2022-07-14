@@ -1,3 +1,4 @@
+from .user import User
 from .attribute import Attribute
 from .identifier import Identifier, IdentifierType
 from .property import Property, PropertySpecification, PropertyType
