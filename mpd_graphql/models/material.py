@@ -9,6 +9,14 @@ from .property import Property
 from .tracker import Tracker
 
 
+class MaterialType(models.Model):
+    name = models.TextField()
+    description = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class MaterialSpecification(TreeNode, Tracker):
     class Meta:
         ordering = ('name',)
@@ -18,6 +26,9 @@ class MaterialSpecification(TreeNode, Tracker):
     description = models.TextField(null=True)
     version = models.TextField(null=True)
 
+    material_type = models.ForeignKey(MaterialType,
+                                      on_delete=models.SET_NULL,
+                                      null=True)
     attributes = models.ManyToManyField(Attribute)
     identifiers = models.ManyToManyField(Identifier)
     properties = models.ManyToManyField(Property)
