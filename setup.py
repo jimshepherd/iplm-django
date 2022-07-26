@@ -19,6 +19,8 @@ setup(
         'django-graphql-jwt',
         'django-cors-headers',
         'django-environ',  # Handles secrets stored in .env files
+        'feincms3',  # For displaying trees in admin
+        'django-currentuser',  # Add current user to Tracker models
     ],
     extras_require={
         'test': [
@@ -29,4 +31,7 @@ setup(
             'daphne',
         ]
     },
+    dependency_links=[
+      'https://github.com/PaesslerAG/django-currentuser/tarball/master#egg=django-currentuser'
+    ],
 )

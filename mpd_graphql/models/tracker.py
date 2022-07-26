@@ -1,6 +1,5 @@
 from django.db import models
-
-from .user import User
+from django_currentuser.db.models import CurrentUserField
 
 
 class Tracker(models.Model):
@@ -8,17 +7,9 @@ class Tracker(models.Model):
         abstract = True
 
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User,
-                                   related_name='created_%(class)s_set',
-                                   on_delete=models.SET_NULL,
-                                   null=True, blank=True)
+    created_by = CurrentUserField(related_name='created_%(class)s_set',
+                                  on_delete=models.SET_NULL)
     modified_at = models.DateTimeField(auto_now=True)
-    modified_by = models.ForeignKey(User,
-                                    related_name='modified_%(class)s_set',
-                                    on_delete=models.SET_NULL,
-                                    null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        # print('Save args', args)
-        # print('Save kwargs', kwargs)
-        super().save(*args, **kwargs)
+    modified_by = CurrentUserField(related_name='modified_%(class)s_set',
+                                   on_delete=models.SET_NULL,
+                                   on_update=True)
