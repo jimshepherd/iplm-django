@@ -1,9 +1,10 @@
 from django.db import models
+from tree_queries.models import TreeNode
 
 from .tracker import Tracker
 
 
-class PropertyType(models.Model):
+class PropertyType(TreeNode):
     name = models.TextField()
     description = models.TextField(null=True)
 
@@ -13,7 +14,7 @@ class PropertyType(models.Model):
 
 class PropertySpecification(Tracker):
     name = models.TextField()
-    description = models.TextField()
+    description = models.TextField(null=True)
     property_type = models.ForeignKey(PropertyType,
                                       on_delete=models.SET_NULL,
                                       null=True)

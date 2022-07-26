@@ -1,9 +1,10 @@
 from mixer.backend.django import mixer
 
 from mpd_graphql.models import \
-    Attribute, Identifier, IdentifierType, Property, PropertyType, \
+    Attribute, Identifier, IdentifierType, \
     Organization, \
-    Equipment, EquipmentType
+    Equipment, EquipmentType, \
+    Property, PropertyType, PropertySpecification
 
 from .mpd_graphql import MPDGraphQLTestCase
 
@@ -49,7 +50,7 @@ query equipment {
 }
 '''
 
-MATERIAL_TYPES_QUERY = '''
+EQUIPMENT_TYPES_QUERY = '''
 query EquipmentTypes {
     equipmentTypes {
         id
@@ -104,7 +105,7 @@ mutation updateEquipment($equipment: EquipmentInput!) {
 
 UPDATE_EQUIPMENT_TYPE_MUTATION = '''
 mutation updateEquipmentType($equipmentType: EquipmentTypeInput!) {
-    updateMaterialType(equipmentType: $equipmentType) {
+    updateEquipmentType(equipmentType: $equipmentType) {
         equipmentType {
             id
             name
@@ -222,7 +223,7 @@ class EquipmentUnitTestCase(MPDGraphQLTestCase):
         equip = data['updateEquipment']['equipment']
         self.assertEqual(equip['name'], name)
         self.assertEqual(equip['description'], description)
-        equip_type = equip['materialType']
+        equip_type = equip['equipmentType']
         self.assertEqual(int(equip_type['id']), self.equip_type2.id)
         org = equip['organization']
         self.assertEqual(int(org['id']), self.org2.id)
@@ -246,7 +247,7 @@ class EquipmentUnitTestCase(MPDGraphQLTestCase):
         description = 'Updated description'
         variables = {
             'equipmentType': {
-                'id': self.mat_spec1.id,
+                'id': self.equip_type1.id,
                 'name': name,
                 'description': description,
             }

@@ -1,9 +1,23 @@
 from django.db import models
 
-from .material import Material
-from .process import Process, ProcessStep
+from .material import Material, MaterialSpecification
+from .process import Process, ProcessMethod, ProcessMethodStep, ProcessStep
 from .property import Property
 from .tracker import Tracker
+
+
+class ProcessMethodMaterialSpecification(Tracker):
+    process_method = models.ForeignKey(ProcessMethod,
+                                       related_name='material_specifications_in',
+                                       on_delete=models.CASCADE)
+    process_method_step = models.ForeignKey(ProcessMethodStep,
+                                            related_name='material_specifications_in',
+                                            on_delete=models.CASCADE,
+                                            null=True)
+    material_specification = models.ForeignKey(MaterialSpecification,
+                                               related_name='process_methods_used_in',
+                                               on_delete=models.CASCADE)
+    properties = models.ManyToManyField(Property)
 
 
 class ProcessMaterial(Tracker):
@@ -11,7 +25,7 @@ class ProcessMaterial(Tracker):
                                 related_name='materials_in',
                                 on_delete=models.CASCADE)
     process_step = models.ForeignKey(ProcessStep,
-                                     related_name='material_specifications_in',
+                                     related_name='materials_in',
                                      on_delete=models.CASCADE,
                                      null=True)
     material = models.ForeignKey(Material,

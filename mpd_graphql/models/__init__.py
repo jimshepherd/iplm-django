@@ -7,4 +7,4 @@ from .organization import Address, Organization, OrganizationType
 from .equipment import Equipment, EquipmentType
 from .material import Material, MaterialSpecification, MaterialType
 from .process import Process, ProcessStep, ProcessMethod, ProcessMethodStep, ProcessType
-from .process_material import ProcessMaterial
+from .process_material import ProcessMaterial, ProcessMethodMaterialSpecification

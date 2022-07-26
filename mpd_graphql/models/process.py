@@ -35,6 +35,9 @@ class ProcessMethod(TreeNode, Tracker):
     properties = models.ManyToManyField(Property)
     property_specs = models.ManyToManyField(PropertySpecification)
 
+    material_specs_in = models.ManyToManyField('MaterialSpecification',
+                                               through='ProcessMethodMaterialSpecification')
+
     # steps
 
     def __str__(self):

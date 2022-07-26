@@ -37,6 +37,9 @@ class MaterialSpecification(TreeNode, Tracker):
                                  on_delete=models.SET_NULL,
                                  null=True)
 
+    #process_methods_used_in = models.ManyToManyField('ProcessMethod',
+    #                                                 through='ProcessMethodMaterialSpecification')
+
     def __str__(self):
         return self.name
 

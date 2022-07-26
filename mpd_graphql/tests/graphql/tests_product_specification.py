@@ -19,10 +19,6 @@ query products {
         name
         description
         version
-        productType {
-            id
-            name
-        }
     }
 }
 '''
@@ -36,10 +32,6 @@ query producedProducts {
         product {
             id
             name
-            productType {
-                id
-                name
-            }
         }
         process {
             id
@@ -170,10 +162,6 @@ mutation updateProduct($product: ProductInput!) {
             name
             description
             version
-            productType {
-                id
-                name
-            }
         }
     }
 }
@@ -189,10 +177,6 @@ mutation updateProducedProduct($producedProduct: ProducedProductInput!) {
             product {
                 id
                 name
-                productType {
-                    id
-                    name
-                }
             }
             process {
                 id
@@ -270,6 +254,10 @@ mutation updateMicType($micType: MICTypeInput!) {
             id
             name
             description
+            parent {
+                id
+                name
+            }
         }
     }
 }
@@ -283,6 +271,10 @@ mutation updateProductSpecification($productSpecification: ProductSpecificationI
             name
             description
             version
+            product {
+                id
+                name
+            }
             mics {
                 id
                 name
@@ -386,13 +378,19 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                                           identifiers=[self.ident2],
                                           properties=[])
 
+        self.mic_type_parent = mixer.blend(PropertyType,
+                                           name='MIC',
+                                           description='MIC property type')
         self.mic_type1 = mixer.blend(PropertyType,
+                                     parent=self.mic_type_parent,
                                      name='MIC Bidirectional',
                                      description='Quantitative Bidirectional MIC type')
         self.mic_type2 = mixer.blend(PropertyType,
+                                     parent=self.mic_type_parent,
                                      name='MIC Drop Down',
                                      description='Qualitative Drop Down MIC type')
         self.mic_type3 = mixer.blend(PropertyType,
+                                     parent=self.mic_type_parent,
                                      name='MIC Lower Bound',
                                      description='Quantitative Lower Bound MIC type')
         self.mic1 = mixer.blend(PropertySpecification,
@@ -517,7 +515,7 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         data = response.data
         # print('test_mic_types data', data)
 
-        assert len(data['micTypes']) == 3
+        assert len(data['micTypes']) == 4
 
     def test_mic_values(self):
 
@@ -569,9 +567,6 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                 'id': self.prod1.id,
                 'name': name,
                 'description': description,
-                'productType': {
-                    'id': self.prod_type.id,
-                },
             }
         }
         response = self.client.execute(UPDATE_PRODUCT_MUTATION, variables)
@@ -584,7 +579,6 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         prod = data['updateProduct']['product']
         self.assertEqual(prod['name'], name)
         self.assertEqual(prod['description'], description)
-        self.assertEqual(int(prod['productType']['id']), self.prod_type.id)
 
     def test_update_product_type(self):
 
@@ -673,6 +667,27 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         self.assertEqual(prop['unit'], unit)
         self.assertEqual(int(prop['micType']['id']), self.mic_type2.id)
 
+    def test_create_mic_type(self):
+
+        name = 'New Name'
+        description = 'New description'
+        variables = {
+            'micType': {
+                'name': name,
+                'description': description,
+            }
+        }
+        response = self.client.execute(UPDATE_MIC_TYPE_MUTATION, variables)
+        if response.errors is not None:
+            print('test_create_mic_type response', response)
+        data = response.data
+        # print('test_create_mic_type data', data)
+
+        mic_type = data['updateMicType']['micType']
+        self.assertEqual(mic_type['name'], name)
+        self.assertEqual(mic_type['description'], description)
+        self.assertEqual(mic_type['parent']['name'], 'MIC')
+
     def test_update_mic_type(self):
 
         name = 'Updated Name'
@@ -737,9 +752,12 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                 'name': name,
                 'description': description,
                 'version': version,
+                'product': {
+                    'id': self.prod2.id,
+                },
                 'mics': [{
                     'id': self.mic2.id,
-                },{
+                }, {
                     'id': self.mic3.id,
                 }],
                 'propertySpecs': [],
@@ -751,14 +769,42 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         data = response.data
         # print('test_update_product_specification data', data)
 
-        prop = data['updateProductSpecification']['productSpecification']
-        self.assertEqual(prop['name'], name)
-        self.assertEqual(prop['description'], description)
-        self.assertEqual(prop['version'], version)
-        mic1 = prop['mics'][0]
-        mic2 = prop['mics'][1]
+        spec = data['updateProductSpecification']['productSpecification']
+        self.assertEqual(spec['name'], name)
+        self.assertEqual(spec['description'], description)
+        self.assertEqual(spec['version'], version)
+        self.assertEqual(int(spec['product']['id']), self.prod2.id)
+        mic1 = spec['mics'][0]
+        mic2 = spec['mics'][1]
         self.assertEqual(int(mic1['id']), self.mic2.id)
         self.assertEqual(int(mic2['id']), self.mic3.id)
+
+        # Change product
+        variables = {
+            'productSpecification': {
+                'id': self.prod_spec1.id,
+                'name': name,
+                'description': description,
+                'version': version,
+                'product': {
+                    'id': self.prod1.id,
+                },
+                'mics': [{
+                    'id': self.mic2.id,
+                }, {
+                    'id': self.mic3.id,
+                }],
+                'propertySpecs': [],
+            }
+        }
+        response = self.client.execute(UPDATE_PRODUCT_SPECIFICATION_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_product_specification response', response)
+        data = response.data
+        # print('test_update_product_specification data', data)
+        spec = data['updateProductSpecification']['productSpecification']
+        self.assertEqual(int(spec['product']['id']), self.prod1.id)
+
 
     def test_update_product_measurement(self):
 
@@ -779,7 +825,7 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                 },
                 'micValues': [{
                     'id': self.mic_value2.id,
-                },{
+                }, {
                     'id': self.mic_value3.id,
                 }],
                 # 'properties': [], # hack to add properties to input def
