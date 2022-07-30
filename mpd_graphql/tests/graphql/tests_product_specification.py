@@ -6,7 +6,7 @@ from mixer.backend.django import mixer
 from mpd_graphql.models import \
     Identifier, IdentifierType, \
     Material, MaterialSpecification, MaterialType, \
-    Process, ProcessMethod, ProcessType, \
+    Process, ProcessMethod, ProcessMethodStep, ProcessType, \
     Property, PropertySpecification, PropertyType
 
 from .mpd_graphql import MPDGraphQLTestCase
@@ -149,6 +149,31 @@ query productMeasurements {
             floatValue
             textValue
             unit
+        }
+    }
+}
+'''
+
+TEST_PLANS_QUERY = '''
+query testPlans {
+    testPlans {
+        id
+        name
+        description
+        specification {
+            id
+            name
+        }
+        product {
+            id
+            name
+        }
+        mics {
+            id
+            micId
+            order
+            sampleType
+            sampleSize
         }
     }
 }
@@ -320,6 +345,34 @@ mutation updateProductMeasurement($productMeasurement: ProductMeasurementInput!)
 '''
 
 
+UPDATE_TEST_PLAN_MUTATION = '''
+mutation updateTestPlan($testPlan: TestPlanInput!) {
+    updateTestPlan(testPlan: $testPlan) {
+        testPlan {
+            id
+            name
+            description
+            specification {
+                id
+                name
+            }
+            product {
+                id
+                name
+            }
+            mics {
+                id
+                micId
+                order
+                sampleType
+                sampleSize
+            }
+        }
+    }
+}
+'''
+
+
 class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
 
     def setUp(self):
@@ -455,6 +508,44 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                                       # steps=[],
                                       )
 
+        self.test_type = mixer.blend(ProcessType,
+                                     name='Test Plan',
+                                     description='Test Plan process type')
+        self.sample_type_type = mixer.blend(PropertyType,
+                                            parent=None,
+                                            name='Sample Type',
+                                            description='Sample type property type')
+        self.sample_type_prop = mixer.blend(Property,
+                                            property_type=self.sample_type_type,
+                                            specification=None,
+                                            text_value='MR')
+        self.sample_size_type = mixer.blend(PropertyType,
+                                            parent=None,
+                                            name='Sample Size',
+                                            description='Sample size property type')
+        self.sample_size_prop = mixer.blend(Property,
+                                            property_type=self.sample_type_type,
+                                            specification=None,
+                                            int_value=12)
+        self.test_plan1 = mixer.blend(ProcessMethod,
+                                      name='20oz Bottle First Article',
+                                      description='First article test plan for 20oz Bottle',
+                                      version='1.0',
+                                      parent=self.prod_spec1,
+                                      process_type=self.test_type,
+                                      properties=[],
+                                      property_specs=[],
+                                      # steps=[self.test_step1],
+                                      )
+        self.test_step1 = mixer.blend(ProcessMethodStep,
+                                      name='20oz Bottle First Article',
+                                      description='First article test plan for 20oz Bottle',
+                                      method=self.test_plan1,
+                                      order=1,
+                                      process_type=self.test_type,
+                                      properties=[self.sample_type_prop, self.sample_size_prop],
+                                      property_specs=[self.mic1],
+                                      )
         self.prod_meas1 = mixer.blend(Process,
                                       name='20oz Bottle Measurements 20220620',
                                       description='Measurements made on bottle batch 20220620',
@@ -557,6 +648,15 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
 
         assert len(data['productMeasurements']) == 2
 
+    def test_test_plans(self):
+
+        response = self.client.execute(TEST_PLANS_QUERY, {})
+        if response.errors is not None:
+            print('test_test_plans response', response)
+        data = response.data
+        # print('test_test_plans data', data)
+
+        assert len(data['testPlans']) == 1
 
     def test_update_product(self):
 
@@ -760,7 +860,6 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                 }, {
                     'id': self.mic3.id,
                 }],
-                'propertySpecs': [],
             }
         }
         response = self.client.execute(UPDATE_PRODUCT_SPECIFICATION_MUTATION, variables)
@@ -805,6 +904,55 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         spec = data['updateProductSpecification']['productSpecification']
         self.assertEqual(int(spec['product']['id']), self.prod1.id)
 
+    def test_update_test_plan(self):
+
+        name = 'New name'
+        description = 'New description'
+        variables = {
+            'testPlan': {
+                'id': self.test_plan1.id,
+                'name': name,
+                'description': description,
+                'specification': {
+                    'id': self.prod_spec2.id,
+                },
+                'product': {
+                    'id': self.prod2.id,
+                },
+                'mics': [{
+                    'id': self.test_step1.id,
+                    'micId': self.mic2.id,
+                    'order': 1,
+                    'sampleType': 'MR',
+                    'sampleSize': 10,
+                }, {
+                    'micId': self.mic3.id,
+                    'order': 2,
+                    'sampleType': 'Sample',
+                    'sampleSize': 1,
+                }],
+            }
+        }
+        response = self.client.execute(UPDATE_TEST_PLAN_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_test_plan response', response)
+        data = response.data
+        # print('test_update_test_plan data', data)
+
+        spec = data['updateTestPlan']['testPlan']
+        self.assertEqual(spec['name'], name)
+        self.assertEqual(spec['description'], description)
+        self.assertEqual(int(spec['product']['id']), self.prod2.id)
+        mic1 = spec['mics'][0]
+        mic2 = spec['mics'][1]
+        self.assertEqual(int(mic1['micId']), self.mic2.id)
+        self.assertEqual(int(mic1['order']), 1)
+        self.assertEqual(mic1['sampleType'], 'MR')
+        self.assertEqual(int(mic1['sampleSize']), 10)
+        self.assertEqual(int(mic2['micId']), self.mic3.id)
+        self.assertEqual(int(mic2['order']), 2)
+        self.assertEqual(mic2['sampleType'], 'Sample')
+        self.assertEqual(int(mic2['sampleSize']), 1)
 
     def test_update_product_measurement(self):
 

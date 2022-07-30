@@ -21,6 +21,7 @@ setup(
         'django-environ',  # Handles secrets stored in .env files
         'feincms3',  # For displaying trees in admin
         'django-currentuser',  # Add current user to Tracker models
+        'django-sortedm2m',  # Ordered many-to-many
     ],
     extras_require={
         'test': [

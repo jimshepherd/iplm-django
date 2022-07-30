@@ -111,7 +111,8 @@ def update_model_from_input(model: 'ModelType',
         except AttributeError:
             model_attr_type = model._meta.get_field(key).get_internal_type()
         except FieldDoesNotExist:
-            print(f'Field {key} does not exist in model\n')
+            print(f'Field {key} does not exist in model {type(model)} '
+                  f'from input {type(graphql_input)}\n')
             continue
         except Exception as e:
             print(f'Exception {e} of type {type(e)}\n')

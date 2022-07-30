@@ -1,4 +1,5 @@
 from django.db import models
+from sortedm2m.fields import SortedManyToManyField
 from tree_queries.models import TreeNode
 
 from .data_set import DataSet
@@ -32,8 +33,8 @@ class ProcessMethod(TreeNode, Tracker):
     equipment_type = models.ForeignKey(EquipmentType,
                                        on_delete=models.SET_NULL,
                                        null=True)
-    properties = models.ManyToManyField(Property)
-    property_specs = models.ManyToManyField(PropertySpecification)
+    properties = SortedManyToManyField(Property)
+    property_specs = SortedManyToManyField(PropertySpecification)
 
     material_specs_in = models.ManyToManyField('MaterialSpecification',
                                                through='ProcessMethodMaterialSpecification')
@@ -46,8 +47,8 @@ class ProcessMethod(TreeNode, Tracker):
 
 class ProcessMethodStep(TreeNode, Tracker):
     class Meta:
-        ordering = ('name',)
-        unique_together = (('name', 'parent'),)
+        ordering = ('order',)
+        unique_together = (('parent', 'order'),)
 
     name = models.TextField()
     description = models.TextField()
@@ -56,8 +57,8 @@ class ProcessMethodStep(TreeNode, Tracker):
     method = models.ForeignKey(ProcessMethod,
                                related_name='steps',
                                on_delete=models.CASCADE)
-    properties = models.ManyToManyField(Property)
-    property_specs = models.ManyToManyField(PropertySpecification)
+    properties = SortedManyToManyField(Property)
+    property_specs = SortedManyToManyField(PropertySpecification)
 
     def __str__(self):
         return self.name
@@ -83,7 +84,7 @@ class Process(Tracker):
     operator = models.ForeignKey(User,
                                  on_delete=models.SET_NULL,
                                  null=True)
-    properties = models.ManyToManyField(Property)
+    properties = SortedManyToManyField(Property)
 
     # materials_in
     # materials_out
@@ -112,7 +113,7 @@ class ProcessStep(TreeNode, Tracker):
     # Following fields duplicate method steps so might be removable
     # parent = models.ForeignKey('ProcessStep',
     #                            on_delete=models.CASCADE)
-    properties = models.ManyToManyField(Property)
+    properties = SortedManyToManyField(Property)
 
     def __str__(self):
         return self.name

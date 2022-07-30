@@ -8,16 +8,18 @@ from ..models import \
     Material as MaterialModel, \
     MaterialType as MaterialTypeModel, \
     ProcessMethod as ProcessMethodModel, \
+    ProcessMethodStep as ProcessMethodStepModel, \
     Process as ProcessModel, \
     ProcessMethodMaterialSpecification as ProcessMethodMaterialSpecificationModel, \
+    ProcessType as ProcessTypeModel, \
     Property as PropertyModel, \
     PropertySpecification as PropertySpecificationModel, \
     PropertyType as PropertyTypeModel
 
-from .base import NamedInput
+from .base import BaseInput, NamedInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
 from .identifier import IdentifierInput
-from .process import ProcessInput
+from .process import ProcessInput, ProcessTypeInput
 from .user import UserInput
 
 
@@ -112,7 +114,7 @@ class MICInput(NamedInput):
     property_type = mic_type
 
 
-class MICValueInput(NamedInput):
+class MICValueInput(BaseInput):
     mic = graphene.Field(MICInput)
     # mic_type = graphene.Field(MICTypeInput)
     int_value = graphene.Int()
@@ -158,6 +160,50 @@ class ProductMeasurement(DjangoObjectType):
         return self.properties.all()
 
 
+# noinspection PyMethodParameters
+class TestPlanMIC(DjangoObjectType):
+    class Meta:
+        model = ProcessMethodStepModel
+
+    mic_id = graphene.ID()
+    sample_type = graphene.String()
+    sample_size = graphene.Int()
+
+    def resolve_mic_id(self, info):
+        return next((prop_spec.id for prop_spec in self.property_specs.all()),
+                    None)
+
+    def resolve_sample_type(self, info):
+        return next((prop.text_value for prop in self.properties.filter(property_type__name='Sample Type').all()),
+                    None)
+
+    def resolve_sample_size(self, info):
+        return next((prop.int_value for prop in self.properties.filter(property_type__name='Sample Size').all()),
+                    None)
+
+
+# noinspection PyMethodParameters
+class TestPlan(DjangoObjectType):
+    class Meta:
+        model = ProcessMethodModel
+
+    product = graphene.Field(Product)
+    mics = graphene.List(TestPlanMIC)
+    specification = graphene.Field(ProductSpecification)
+
+    def resolve_product(self, info):
+        proc_meth_mat_spec = self.material_specifications_in.first()
+        if proc_meth_mat_spec is not None:
+            return proc_meth_mat_spec.material_specification
+        return None
+
+    def resolve_mics(self, info):
+        return self.steps.all()
+
+    def resolve_specification(self, info):
+        return self.parent
+
+
 class ProductSpecificationInput(NamedInput):
     description = graphene.String()
     version = graphene.String()
@@ -168,6 +214,7 @@ class ProductSpecificationInput(NamedInput):
 
     # Hack to allow mics to be copied to property_specs in update_model_from_input()
     property_specs = mics
+    process_type = graphene.Field(ProcessTypeInput)
 
 
 class ProductMeasurementInput(NamedInput):
@@ -182,6 +229,27 @@ class ProductMeasurementInput(NamedInput):
     properties = mic_values
 
 
+class TestPlanMICInput(BaseInput):
+    mic_id = graphene.ID()
+    order = graphene.Int()
+    sample_type = graphene.String()
+    sample_size = graphene.Int()
+
+
+class TestPlanInput(NamedInput):
+    description = graphene.String()
+    version = graphene.String()
+    specification = graphene.Field(lambda: ProductSpecificationInput)
+    # properties = graphene.List(PropertyInput)
+    product = graphene.Field(ProductInput)
+    mics = graphene.List(TestPlanMICInput)
+
+    # Hack to allow mics to be copied to property_specs in update_model_from_input()
+    parent = specification
+    steps = mics
+    process_type = graphene.Field(ProcessTypeInput)
+
+
 # noinspection PyMethodParameters,PyMethodMayBeStatic
 class MICQuery(graphene.ObjectType):
     product_types = graphene.List(ProductType)
@@ -192,6 +260,7 @@ class MICQuery(graphene.ObjectType):
     mics = graphene.List(MIC)
     product_specifications = graphene.List(ProductSpecification)
     product_measurements = graphene.List(ProductMeasurement)
+    test_plans = graphene.List(TestPlan)
 
     def resolve_product_types(root, info) -> List[MaterialTypeModel]:
         # TODO: Add filters for Product Material Types
@@ -223,6 +292,10 @@ class MICQuery(graphene.ObjectType):
 
     def resolve_product_measurements(root, info) -> List[ProcessModel]:
         q = ProcessModel.objects.filter(process_type__name='Product Specification')
+        return q.all()
+
+    def resolve_test_plans(root, info) -> List[ProcessMethodModel]:
+        q = ProcessMethodModel.objects.filter(process_type__name='Test Plan')
         return q.all()
 
 
@@ -348,7 +421,11 @@ class UpdateProductSpecification(graphene.Mutation):
     def mutate(root, info, product_specification=None):
         product_spec_model = get_model_by_id_or_name(ProcessMethodModel, product_specification)
         if product_spec_model is None:
-            product_spec_model = ProcessMethodModel()
+            product_spec_model = ProcessMethodModel.objects.create()
+
+        process_type = get_model_by_id_or_name(ProcessTypeModel,
+                                               Namespace(name='Product Specification'))
+        product_specification.process_type = Namespace(id=process_type.id)
 
         product_specification.property_specs = product_specification.mics
 
@@ -392,6 +469,68 @@ class UpdateProductMeasurement(graphene.Mutation):
         return UpdateProductMeasurement(product_measurement=measurement_model)
 
 
+class UpdateTestPlan(graphene.Mutation):
+    class Arguments:
+        test_plan = TestPlanInput(required=True)
+
+    test_plan = graphene.Field(TestPlan)
+
+    def mutate(root, info, test_plan=None):
+        test_model = get_model_by_id_or_name(ProcessMethodModel, test_plan)
+        if test_model is None:
+            test_model = ProcessMethodModel.objects.create()
+
+        process_type = get_model_by_id_or_name(ProcessTypeModel,
+                                               Namespace(name='Test Plan'))
+        test_plan.process_type = Namespace(id=process_type.id)
+
+        test_plan.parent = test_plan.specification
+
+        update_model_from_input(test_model, test_plan,
+                                exclude_attrs=['product', 'mics', 'specification'])
+
+        product_model = get_model_by_id_or_name(MaterialSpecificationModel, test_plan.product)
+        if product_model is not None:
+            try:
+                prod_spec_prod_model = ProcessMethodMaterialSpecificationModel.objects\
+                    .get(process_method=test_model)
+            except ProcessMethodMaterialSpecificationModel.DoesNotExist:
+                prod_spec_prod_model = None
+            if prod_spec_prod_model is None:
+                ProcessMethodMaterialSpecificationModel.objects\
+                    .create(process_method=test_model,
+                            material_specification=product_model)
+            else:
+                prod_spec_prod_model.material_specification = product_model
+                prod_spec_prod_model.save()
+
+        mics = sorted(test_plan.mics, key=lambda x: x.order)
+        # TODO: IF a MIC is not included in test_model.mics, it will no be deleted
+        if mics is not None:
+            for mic in mics:
+                print('mic', mic)
+                proc_meth_step = None
+                if mic.id:
+                    proc_meth_step = get_model_by_id_or_name(ProcessMethodStepModel,
+                                                             Namespace(id=mic.id))
+                if proc_meth_step is None:
+                    proc_meth_step = ProcessMethodStepModel()
+                proc_meth_step.method = test_model
+                proc_meth_step.order = mic.order
+                mic_model = PropertySpecificationModel.objects.filter(id=mic.mic_id).get()
+                proc_meth_step.save()
+                proc_meth_step.property_specs.set([mic_model])
+                sample_type_type = PropertyTypeModel.objects.filter(name='Sample Type').get()
+                sample_type = PropertyModel.objects.create(property_type=sample_type_type,
+                                                           text_value=mic.sample_type)
+                sample_size_type = PropertyTypeModel.objects.filter(name='Sample Size').get()
+                sample_size = PropertyModel.objects.create(property_type=sample_size_type,
+                                                           int_value=mic.sample_size)
+                proc_meth_step.properties.set([sample_type, sample_size], clear=True)
+        test_model.save()
+        return UpdateTestPlan(test_plan=test_model)
+
+
 class MICMutation(graphene.ObjectType):
     update_product = UpdateProduct.Field()
     update_product_type = UpdateProductType.Field()
@@ -401,3 +540,4 @@ class MICMutation(graphene.ObjectType):
     update_mic_value = UpdateMICValue.Field()
     update_product_specification = UpdateProductSpecification.Field()
     update_product_measurement = UpdateProductMeasurement.Field()
+    update_test_plan = UpdateTestPlan.Field()

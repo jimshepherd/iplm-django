@@ -7,6 +7,7 @@ import json
 from .models import \
     Attribute, \
     MaterialSpecification, MaterialType, \
+    ProcessMethod, ProcessMethodStep, ProcessType, \
     PropertySpecification, PropertyType
 
 
@@ -29,6 +30,34 @@ class MaterialSpecificationAdmin(admin.ModelAdmin):
 
 @admin.register(MaterialType)
 class MaterialTypeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+
+class ProcessMethodForm(forms.ModelForm):
+    name = forms.CharField(max_length=100)
+    version = forms.CharField(max_length=50)
+
+
+@admin.register(ProcessMethod)
+class ProcessMethodAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    readonly_fields = ('created_by', 'created_at', 'modified_by', 'modified_at',)
+    form = ProcessMethodForm
+
+
+class ProcessMethodStepForm(forms.ModelForm):
+    name = forms.CharField(max_length=100)
+
+
+@admin.register(ProcessMethodStep)
+class ProcessMethodStepAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    readonly_fields = ('created_by', 'created_at', 'modified_by', 'modified_at',)
+    form = ProcessMethodStepForm
+
+
+@admin.register(ProcessType)
+class ProcessTypeAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
 

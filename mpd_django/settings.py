@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     # 'treebeard',
     'graphene_django',
     'corsheaders',
+    'sortedm2m',
 ]
 
 MIDDLEWARE = [

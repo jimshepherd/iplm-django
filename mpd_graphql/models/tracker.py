@@ -7,9 +7,7 @@ class Tracker(models.Model):
         abstract = True
 
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = CurrentUserField(related_name='created_%(class)s_set',
-                                  on_delete=models.SET_NULL)
+    created_by = CurrentUserField(related_name='created_%(class)s_set')
     modified_at = models.DateTimeField(auto_now=True)
     modified_by = CurrentUserField(related_name='modified_%(class)s_set',
-                                   on_delete=models.SET_NULL,
                                    on_update=True)

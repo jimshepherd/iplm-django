@@ -1,5 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphql_jwt.decorators import login_required
 from typing import List
 
 from ..models import \
@@ -134,6 +135,23 @@ class UpdateProcessMethod(graphene.Mutation):
         return UpdateProcessMethod(process_method=method_model)
 
 
+class UpdateProcessType(graphene.Mutation):
+    class Arguments:
+        process_type = ProcessTypeInput(required=True)
+
+    process_type = graphene.Field(ProcessType)
+
+    @login_required
+    def mutate(root, info, process_type=None):
+        type_model = get_model_by_id_or_name(ProcessTypeModel, process_type)
+        if type_model is None:
+            type_model = ProcessTypeModel()
+        update_model_from_input(type_model, process_type)
+        type_model.save()
+        return UpdateProcessType(process_type=type_model)
+
+
 class ProcessMutation(graphene.ObjectType):
     update_process = UpdateProcess.Field()
     update_process_method = UpdateProcessMethod.Field()
+    update_process_type = UpdateProcessType.Field()
