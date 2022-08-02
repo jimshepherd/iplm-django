@@ -165,13 +165,52 @@ class TestPlanMIC(DjangoObjectType):
     class Meta:
         model = ProcessMethodStepModel
 
-    mic_id = graphene.ID()
     sample_type = graphene.String()
     sample_size = graphene.Int()
 
+    # MIC properties
+    mic_id = graphene.ID()
+    name = graphene.String()
+    description = graphene.String()
+    mic_type = graphene.Field(MICType)
+    values = graphene.JSONString()
+    unit = graphene.String()
+
     def resolve_mic_id(self, info):
-        return next((prop_spec.id for prop_spec in self.property_specs.all()),
-                    None)
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.id
+
+    def resolve_name(self, info):
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.name
+
+    def resolve_description(self, info):
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.description
+
+    def resolve_mic_type(self, info):
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.mic_type
+
+    def resolve_values(self, info):
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.values
+
+    def resolve_unit(self, info):
+        mic = self.property_specs.first()
+        if mic is None:
+            return None
+        return mic.unit
 
     def resolve_sample_type(self, info):
         return next((prop.text_value for prop in self.properties.filter(property_type__name='Sample Type').all()),
@@ -275,16 +314,16 @@ class MICQuery(graphene.ObjectType):
         return q.all()
 
     def resolve_mic_values(root, info) -> List[PropertyModel]:
-        # TODO: Add filters for MIC Property Types
-        return PropertyModel.objects.all()
+        mic_types = PropertyTypeModel.objects.filter(name='MIC').get().descendants().all()
+        return PropertyModel.objects.filter(specification__property_type__in=mic_types).all()
 
     def resolve_mics(root, info) -> List[PropertySpecificationModel]:
         # TODO: Add filters for MIC Property Types
         return PropertySpecificationModel.objects.all()
 
     def resolve_mic_types(root, info) -> List[PropertyTypeModel]:
-        # TODO: Add filters for MIC Property Types
-        return PropertyTypeModel.objects.all()
+        parent_mic_type = PropertyTypeModel.objects.filter(name='MIC').get()
+        return parent_mic_type.descendants().all()
 
     def resolve_product_specifications(root, info) -> List[ProcessMethodModel]:
         q = ProcessMethodModel.objects.filter(process_type__name='Product Specification')
@@ -487,7 +526,7 @@ class UpdateTestPlan(graphene.Mutation):
         test_plan.parent = test_plan.specification
 
         update_model_from_input(test_model, test_plan,
-                                exclude_attrs=['product', 'mics', 'specification'])
+                                exclude_attrs=['product', 'mics', 'specification', 'steps'])
 
         product_model = get_model_by_id_or_name(MaterialSpecificationModel, test_plan.product)
         if product_model is not None:
@@ -504,20 +543,26 @@ class UpdateTestPlan(graphene.Mutation):
                 prod_spec_prod_model.material_specification = product_model
                 prod_spec_prod_model.save()
 
-        mics = sorted(test_plan.mics, key=lambda x: x.order)
-        # TODO: IF a MIC is not included in test_model.mics, it will no be deleted
-        if mics is not None:
-            for mic in mics:
-                print('mic', mic)
+        step_ids = {step.property_specs.first().id: step.id for step in test_model.steps.all()}
+        if test_plan.mics is not None:
+            for mic in test_plan.mics:
                 proc_meth_step = None
+                mic_id = int(mic.mic_id)
                 if mic.id:
                     proc_meth_step = get_model_by_id_or_name(ProcessMethodStepModel,
                                                              Namespace(id=mic.id))
+                    step_ids = {key: val for key, val in step_ids.items() if val != int(mic.id)}
+                elif mic_id in step_ids:
+                    step_id = step_ids[mic_id]
+                    proc_meth_step = get_model_by_id_or_name(ProcessMethodStepModel,
+                                                             Namespace(id=step_id))
+                    del step_ids[mic_id]
+
                 if proc_meth_step is None:
                     proc_meth_step = ProcessMethodStepModel()
                 proc_meth_step.method = test_model
                 proc_meth_step.order = mic.order
-                mic_model = PropertySpecificationModel.objects.filter(id=mic.mic_id).get()
+                mic_model = PropertySpecificationModel.objects.filter(id=mic_id).get()
                 proc_meth_step.save()
                 proc_meth_step.property_specs.set([mic_model])
                 sample_type_type = PropertyTypeModel.objects.filter(name='Sample Type').get()
@@ -527,6 +572,8 @@ class UpdateTestPlan(graphene.Mutation):
                 sample_size = PropertyModel.objects.create(property_type=sample_size_type,
                                                            int_value=mic.sample_size)
                 proc_meth_step.properties.set([sample_type, sample_size], clear=True)
+        for step_id in step_ids.values():
+            ProcessMethodStepModel.objects.filter(id=step_id).delete()
         test_model.save()
         return UpdateTestPlan(test_plan=test_model)
 

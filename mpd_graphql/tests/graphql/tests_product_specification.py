@@ -606,7 +606,7 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
         data = response.data
         # print('test_mic_types data', data)
 
-        assert len(data['micTypes']) == 4
+        assert len(data['micTypes']) == 3
 
     def test_mic_values(self):
 
