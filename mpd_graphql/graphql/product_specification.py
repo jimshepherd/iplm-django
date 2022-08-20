@@ -82,7 +82,7 @@ class ProductInput(NamedInput):
     description = graphene.String()
     version = graphene.String()
 
-    process = graphene.Field(ProcessInput)
+    # process = graphene.Field(ProcessInput)
 
     # Hack to allow product_type to be copied to material_type in update_model_from_input()
     material_type = graphene.Field(ProductTypeInput)
@@ -136,10 +136,7 @@ class ProductSpecification(DjangoObjectType):
     mics = graphene.List(MIC)
 
     def resolve_product(self, info):
-        proc_meth_mat_spec = self.material_specifications_in.first()
-        if proc_meth_mat_spec is not None:
-            return proc_meth_mat_spec.material_specification
-        return None
+        return self.material_specifications_in.first()
 
     def resolve_mics(self, info):
         return self.property_specs.all()
@@ -198,7 +195,7 @@ class TestPlanMIC(DjangoObjectType):
         mic = self.property_specs.first()
         if mic is None:
             return None
-        return mic.mic_type
+        return mic.property_type
 
     def resolve_values(self, info):
         mic = self.property_specs.first()
@@ -226,18 +223,15 @@ class TestPlan(DjangoObjectType):
     class Meta:
         model = ProcessMethodModel
 
-    product = graphene.Field(Product)
     mics = graphene.List(TestPlanMIC)
+    product = graphene.Field(Product)
     specification = graphene.Field(ProductSpecification)
-
-    def resolve_product(self, info):
-        proc_meth_mat_spec = self.material_specifications_in.first()
-        if proc_meth_mat_spec is not None:
-            return proc_meth_mat_spec.material_specification
-        return None
 
     def resolve_mics(self, info):
         return self.steps.all()
+
+    def resolve_product(self, info):
+        return self.material_specifications_in.first()
 
     def resolve_specification(self, info):
         return self.parent
@@ -290,16 +284,20 @@ class TestPlanInput(NamedInput):
 
 
 # noinspection PyMethodParameters,PyMethodMayBeStatic
-class MICQuery(graphene.ObjectType):
+class ProductSpecificationQuery(graphene.ObjectType):
     product_types = graphene.List(ProductType)
     products = graphene.List(Product)
     produced_products = graphene.List(ProducedProduct)
     mic_types = graphene.List(MICType)
     mic_values = graphene.List(MICValue)
     mics = graphene.List(MIC)
-    product_specifications = graphene.List(ProductSpecification)
+    product_specifications = graphene.List(ProductSpecification,
+                                           product=graphene.Argument(ProductInput))
     product_measurements = graphene.List(ProductMeasurement)
-    test_plans = graphene.List(TestPlan)
+    test_plan = graphene.Field(TestPlan,
+                               test_plan=graphene.Argument(TestPlanInput))
+    test_plans = graphene.List(TestPlan,
+                               product=graphene.Argument(ProductInput))
 
     def resolve_product_types(root, info) -> List[MaterialTypeModel]:
         # TODO: Add filters for Product Material Types
@@ -325,16 +323,25 @@ class MICQuery(graphene.ObjectType):
         parent_mic_type = PropertyTypeModel.objects.filter(name='MIC').get()
         return parent_mic_type.descendants().all()
 
-    def resolve_product_specifications(root, info) -> List[ProcessMethodModel]:
+    def resolve_product_specifications(root, info, product=None) -> List[ProcessMethodModel]:
         q = ProcessMethodModel.objects.filter(process_type__name='Product Specification')
+        if product is not None:
+            if product.id is not None:
+                q = q.filter(material_specifications_in__id=product.id)
         return q.all()
 
     def resolve_product_measurements(root, info) -> List[ProcessModel]:
         q = ProcessModel.objects.filter(process_type__name='Product Specification')
         return q.all()
 
-    def resolve_test_plans(root, info) -> List[ProcessMethodModel]:
+    def resolve_test_plan(root, info, test_plan=None) -> ProcessMethodModel:
+        return get_model_by_id_or_name(ProcessMethodModel, test_plan)
+
+    def resolve_test_plans(root, info, product=None) -> List[ProcessMethodModel]:
         q = ProcessMethodModel.objects.filter(process_type__name='Test Plan')
+        if product is not None:
+            if product.id is not None:
+                q = q.filter(parent__material_specifications_in__id=product.id)
         return q.all()
 
 
@@ -482,7 +489,7 @@ class UpdateProductSpecification(graphene.Mutation):
                     .create(process_method=product_spec_model,
                             material_specification=product_model)
             else:
-                prod_spec_prod_model.material_specification=product_model
+                prod_spec_prod_model.material_specification = product_model
                 prod_spec_prod_model.save()
 
         product_spec_model.save()
@@ -578,7 +585,7 @@ class UpdateTestPlan(graphene.Mutation):
         return UpdateTestPlan(test_plan=test_model)
 
 
-class MICMutation(graphene.ObjectType):
+class ProductSpecificationMutation(graphene.ObjectType):
     update_product = UpdateProduct.Field()
     update_product_type = UpdateProductType.Field()
     update_produced_product = UpdateProducedProduct.Field()

@@ -45,9 +45,9 @@ query materials {
 }
 '''
 
-MATERIAL_SPECS_QUERY = '''
-query MaterialSpecs {
-    materialSpecs {
+MATERIAL_SPECIFICATIONS_QUERY = '''
+query MaterialSpecifications {
+    materialSpecifications {
         id
         name
         description
@@ -122,10 +122,10 @@ mutation updateMaterial($material: MaterialInput!) {
 }
 '''
 
-UPDATE_MATERIAL_SPEC_MUTATION = '''
-mutation updateMaterialSpec($materialSpec: MaterialSpecificationInput!) {
-    updateMaterialSpec(materialSpec: $materialSpec) {
-        materialSpec {
+UPDATE_MATERIAL_SPECIFICATION_MUTATION = '''
+mutation updateMaterialSpecification($materialSpecification: MaterialSpecificationInput!) {
+    updateMaterialSpecification(materialSpecification: $materialSpecification) {
+        materialSpecification {
             id
             name
             description
@@ -222,19 +222,22 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
     def test_materials(self):
 
         response = self.client.execute(MATERIALS_QUERY, {})
-        # print('test_materials response', response)
+        if response.errors is not None:
+            print('test_materials response', response)
         data = response.data
         # print('test_materials data', data)
 
         assert len(data['materials']) == 2
 
-    def test_material_specs(self):
+    def test_material_specifications(self):
 
-        response = self.client.execute(MATERIAL_SPECS_QUERY, {})
+        response = self.client.execute(MATERIAL_SPECIFICATIONS_QUERY, {})
+        if response.errors is not None:
+            print('test_material_specifications response', response)
         data = response.data
-        # print('test_material_specs data', data)
+        # print('test_material_specifications data', data)
 
-        assert len(data['materialSpecs']) == 2
+        assert len(data['materialSpecifications']) == 2
 
     def test_update_material(self):
 
@@ -266,7 +269,8 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
             }
         }
         response = self.client.execute(UPDATE_MATERIAL_MUTATION, variables)
-        # print('test_update_material response', response)
+        if response.errors is not None:
+            print('test_update_material response', response)
         data = response.data
         # print('test_update_material data', data)
 
@@ -295,7 +299,7 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
         description = 'Updated description'
         version = 'Updated version'
         variables = {
-            'materialSpec': {
+            'materialSpecification': {
                 'id': self.mat_spec1.id,
                 'name': name,
                 'description': description,
@@ -320,11 +324,13 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
                 },
             }
         }
-        response = self.client.execute(UPDATE_MATERIAL_SPEC_MUTATION, variables)
+        response = self.client.execute(UPDATE_MATERIAL_SPECIFICATION_MUTATION, variables)
+        if response.errors is not None:
+            print('test_update_material_spcification response', response)
         data = response.data
-        # print('test_update_material_spec data', data)
+        # print('test_update_material_specification data', data)
 
-        mat_spec = data['updateMaterialSpec']['materialSpec']
+        mat_spec = data['updateMaterialSpecification']['materialSpecification']
         self.assertEqual(mat_spec['name'], name)
         self.assertEqual(mat_spec['description'], description)
         self.assertEqual(mat_spec['version'], version)

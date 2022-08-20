@@ -36,8 +36,8 @@ class ProcessMethod(TreeNode, Tracker):
     properties = SortedManyToManyField(Property)
     property_specs = SortedManyToManyField(PropertySpecification)
 
-    material_specs_in = models.ManyToManyField('MaterialSpecification',
-                                               through='ProcessMethodMaterialSpecification')
+    material_specifications_in = models.ManyToManyField('MaterialSpecification',
+                                                        through='ProcessMethodMaterialSpecification')
 
     # steps
 

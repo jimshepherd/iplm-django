@@ -8,14 +8,14 @@ from .tracker import Tracker
 
 class ProcessMethodMaterialSpecification(Tracker):
     process_method = models.ForeignKey(ProcessMethod,
-                                       related_name='material_specifications_in',
+                                       related_name='process_method_material_specifications_in',
                                        on_delete=models.CASCADE)
     process_method_step = models.ForeignKey(ProcessMethodStep,
-                                            related_name='material_specifications_in',
+                                            related_name='process_method_material_specifications_in',
                                             on_delete=models.CASCADE,
                                             null=True)
     material_specification = models.ForeignKey(MaterialSpecification,
-                                               related_name='process_methods_used_in',
+                                               related_name='process_method_material_specifications_used_in',
                                                on_delete=models.CASCADE)
     properties = models.ManyToManyField(Property)
 

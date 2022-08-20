@@ -107,12 +107,16 @@ query micTypes {
 '''
 
 PRODUCT_SPECIFICATIONS_QUERY = '''
-query productSpecifications {
-    productSpecifications {
+query ProductSpecifications($product: ProductInput) {
+    productSpecifications(product: $product) {
         id
         name
         description
         version
+        product {
+            id
+            name
+        }
         mics {
             id
             name
@@ -154,9 +158,34 @@ query productMeasurements {
 }
 '''
 
+TEST_PLAN_QUERY = '''
+query testPlan($testPlan: TestPlanInput)  {
+    testPlan(testPlan: $testPlan) {
+        id
+        name
+        description
+        specification {
+            id
+            name
+        }
+        product {
+            id
+            name
+        }
+        mics {
+            id
+            micId
+            order
+            sampleType
+            sampleSize
+        }
+    }
+}
+'''
+
 TEST_PLANS_QUERY = '''
-query testPlans {
-    testPlans {
+query testPlans($product: ProductInput)  {
+    testPlans(product: $product) {
         id
         name
         description
@@ -497,6 +526,8 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                                       property_specs=[self.mic1, self.mic2],
                                       # steps=[],
                                       )
+        self.prod_spec1.material_specifications_in.set([self.prod1])
+
         self.prod_spec2 = mixer.blend(ProcessMethod,
                                       name='38mm Closure Release Criteria',
                                       description='Release criteria for 38mm closure',
@@ -507,6 +538,7 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
                                       property_specs=[self.mic2, self.mic3],
                                       # steps=[],
                                       )
+        self.prod_spec2.material_specifications_in.set([self.prod2])
 
         self.test_type = mixer.blend(ProcessType,
                                      name='Test Plan',
@@ -638,6 +670,21 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
 
         assert len(data['productSpecifications']) == 2
 
+    def test_product_specifications_with_product(self):
+
+        variables = {
+            'product': {
+                'id': self.prod1.id,
+            }
+        }
+        response = self.client.execute(PRODUCT_SPECIFICATIONS_QUERY, variables)
+        if response.errors is not None:
+            print('test_product_specifications_with_product response', response)
+        data = response.data
+        # print('test_product_specifications_with_product data', data)
+
+        assert len(data['productSpecifications']) == 1
+
     def test_product_measurements(self):
 
         response = self.client.execute(PRODUCT_MEASUREMENTS_QUERY, {})
@@ -648,6 +695,25 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
 
         assert len(data['productMeasurements']) == 2
 
+    def test_test_plan(self):
+
+        variables = {
+            'testPlan': {
+                'id': self.test_plan1.id,
+            }
+        }
+        response = self.client.execute(TEST_PLAN_QUERY, variables)
+        if response.errors is not None:
+            print('test_test_plan response', response)
+        data = response.data
+        # print('test_test_plans data', data)
+
+        test_plan = data['testPlan']
+        self.assertEqual(int(test_plan['id']), self.test_plan1.id)
+        self.assertEqual(test_plan['name'], self.test_plan1.name)
+        self.assertEqual(test_plan['description'], self.test_plan1.description)
+
+
     def test_test_plans(self):
 
         response = self.client.execute(TEST_PLANS_QUERY, {})
@@ -655,6 +721,21 @@ class ProductSpecificationUnitTestCase(MPDGraphQLTestCase):
             print('test_test_plans response', response)
         data = response.data
         # print('test_test_plans data', data)
+
+        assert len(data['testPlans']) == 1
+
+    def test_test_plans_with_product(self):
+
+        variables = {
+            'product': {
+                'id': self.prod1.id,
+            }
+        }
+        response = self.client.execute(TEST_PLANS_QUERY, variables)
+        if response.errors is not None:
+            print('test_test_plans_with_product response', response)
+        data = response.data
+        # print('test_test_plans_with_product data', data)
 
         assert len(data['testPlans']) == 1
 

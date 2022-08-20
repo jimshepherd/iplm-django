@@ -64,14 +64,19 @@ class MaterialInput(NamedInput):
 # noinspection PyMethodParameters,PyMethodMayBeStatic
 class MaterialQuery(graphene.ObjectType):
     materials = graphene.List(Material)
-    material_specs = graphene.List(MaterialSpecification)
+    material_specifications = graphene.List(MaterialSpecification,
+                                            parent=graphene.Argument(MaterialSpecificationInput))
     material_types = graphene.List(MaterialType)
 
     def resolve_materials(root, info) -> List[MaterialModel]:
         return MaterialModel.objects.all()
 
-    def resolve_material_specs(root, info) -> List[MaterialSpecificationModel]:
-        return MaterialSpecificationModel.objects.all()
+    def resolve_material_specifications(root, info, parent=None) -> List[MaterialSpecificationModel]:
+        q = MaterialSpecificationModel.objects
+        if parent is not None:
+            if parent.id is not None:
+                q = q.filter(parent__id=parent.id)
+        return q.all()
 
     def resolve_material_types(root, info) -> List[MaterialTypeModel]:
         return MaterialTypeModel.objects.all()
@@ -110,20 +115,20 @@ class UpdateMaterial(graphene.Mutation):
 
 class UpdateMaterialSpecification(graphene.Mutation):
     class Arguments:
-        material_spec = MaterialSpecificationInput(required=True)
+        material_specification = MaterialSpecificationInput(required=True)
 
-    material_spec = graphene.Field(MaterialSpecification)
+    material_specification = graphene.Field(MaterialSpecification)
 
-    def mutate(root, info, material_spec=None):
-        spec_model = get_model_by_id_or_name(MaterialSpecificationModel, material_spec)
+    def mutate(root, info, material_specification=None):
+        spec_model = get_model_by_id_or_name(MaterialSpecificationModel, material_specification)
         if spec_model is None:
             spec_model = MaterialSpecificationModel()
-        update_model_from_input(spec_model, material_spec)
+        update_model_from_input(spec_model, material_specification)
         spec_model.save()
-        return UpdateMaterialSpecification(material_spec=spec_model)
+        return UpdateMaterialSpecification(material_specification=spec_model)
 
 
 class MaterialMutation(graphene.ObjectType):
     update_material = UpdateMaterial.Field()
-    update_material_spec = UpdateMaterialSpecification.Field()
+    update_material_specification = UpdateMaterialSpecification.Field()
     update_material_type = UpdateMaterialType.Field()
