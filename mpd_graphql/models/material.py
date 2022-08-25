@@ -9,7 +9,7 @@ from .property import Property
 from .tracker import Tracker
 
 
-class MaterialType(models.Model):
+class MaterialType(TreeNode):
     name = models.TextField()
     description = models.TextField(null=True)
 
@@ -44,6 +44,13 @@ class MaterialSpecification(TreeNode, Tracker):
         return self.name
 
 
+class MaterialSpecificationDataFile(Tracker):
+    specification = models.ForeignKey(MaterialSpecification,
+                                      related_name='data_files',
+                                      on_delete=models.CASCADE)
+    file = models.FileField()
+
+
 class Material(Tracker):
     name = models.TextField()
     description = models.TextField(null=True)
@@ -67,3 +74,11 @@ class Material(Tracker):
 
     def __str__(self):
         return self.name
+
+
+class MaterialDataFile(Tracker):
+    material = models.ForeignKey(Material,
+                                 related_name='data_files',
+                                 on_delete=models.CASCADE)
+    file = models.FileField()
+

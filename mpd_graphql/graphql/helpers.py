@@ -1,13 +1,44 @@
 from argparse import Namespace
 from typing import TYPE_CHECKING, List, Optional, Type, TypeVar
 
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from django.core.exceptions import FieldDoesNotExist
 
 if TYPE_CHECKING:
     from .base import BaseInput, NamedInput
     ModelType = TypeVar('ModelType', bound=Model)
     GraphQLInput = NamedInput | Namespace
+
+
+def filter_by_id_or_name(model_class: 'Type[ModelType]',
+                         graphql_input: 'GraphQLInput',
+                         query: QuerySet = None,
+                         ) -> Optional[QuerySet]:
+    """
+    Return a query set given a GraphQL input object containing an id or
+    name attribute
+
+    Args:
+        model_class: The model class to search for the model instance
+        graphql_input: A GraphQL input object that contains an id or name attribute
+        query: QuerySet on which the filter will be applied
+
+    Returns:
+        Model instance that matches the provided input attributes
+
+    A Namespace instance from argparse can be used in place of a
+    graphene.InputObjectType for graphql_input.
+    """
+    if graphql_input is None:
+        return None
+    q = query
+    if q is None:
+        q = model_class.objects
+    if 'id' in graphql_input:
+        q = q.filter(id=graphql_input.id)
+    elif 'name' in graphql_input:
+        q = q.filter(name=graphql_input.name)
+    return q
 
 
 def get_model_by_id(model_class: Type['ModelType'],

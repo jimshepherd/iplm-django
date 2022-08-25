@@ -31,6 +31,7 @@ class Property(DjangoObjectType):
 
 class PropertyTypeInput(NamedInput):
     description = graphene.String()
+    parent = graphene.Field(lambda: PropertyTypeInput)
 
 
 class PropertySpecificationInput(NamedInput):

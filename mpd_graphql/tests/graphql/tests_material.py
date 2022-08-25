@@ -3,18 +3,26 @@ from mixer.backend.django import mixer
 from mpd_graphql.models import \
     Attribute, Identifier, IdentifierType, Property, PropertySpecification, PropertyType, \
     Organization, \
-    Material, MaterialSpecification
+    Material, MaterialSpecification, MaterialType
 
 from .mpd_graphql import MPDGraphQLTestCase
 
 
 MATERIALS_QUERY = '''
-query materials {
-    materials {
+query materials($materialType: MaterialTypeInput, $includeSubtypes: Boolean) {
+    materials(materialType: $materialType, includeSubtypes: $includeSubtypes) {
         id
         name
         description
         specification {
+            id
+            name
+        }
+        process {
+            id
+            name
+        }
+        processStep {
             id
             name
         }
@@ -52,6 +60,10 @@ query MaterialSpecifications {
         name
         description
         version
+        materialType {
+            id
+            name
+        }
         attributes {
             id
             name
@@ -83,6 +95,20 @@ query MaterialSpecifications {
 }
 '''
 
+MATERIAL_TYPES_QUERY = '''
+query materialTypes($ancestor: MaterialTypeInput) {
+    materialTypes(ancestor: $ancestor) {
+        id
+        name
+        description
+        parent {
+            id
+            name
+        }
+    }
+}
+'''
+
 UPDATE_MATERIAL_MUTATION = '''
 mutation updateMaterial($material: MaterialInput!) {
     updateMaterial(material: $material) {
@@ -91,6 +117,14 @@ mutation updateMaterial($material: MaterialInput!) {
             name
             description
             specification {
+                id
+                name
+            }
+            process {
+                id
+                name
+            }
+            processStep {
                 id
                 name
             }
@@ -130,6 +164,10 @@ mutation updateMaterialSpecification($materialSpecification: MaterialSpecificati
             name
             description
             version
+            materialType {
+                id
+                name
+            }
             attributes {
                 id
                 name
@@ -193,12 +231,24 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
         self.org1 = mixer.blend(Organization)
         self.org2 = mixer.blend(Organization)
 
+        self.mat_type1 = mixer.blend(MaterialType,
+                                     name='Polymer',
+                                     parent=None)
+        self.mat_type2 = mixer.blend(MaterialType,
+                                     name='PHA',
+                                     parent=self.mat_type1)
+        self.mat_type3 = mixer.blend(MaterialType,
+                                     name='Metal',
+                                     parent=None)
+
         self.mat_spec1 = mixer.blend(MaterialSpecification,
+                                     material_type=self.mat_type1,
                                      attributes=[self.attr1],
                                      identifiers=[self.ident1],
                                      properties=[self.prop1],
                                      supplier=self.org1)
         self.mat_spec2 = mixer.blend(MaterialSpecification,
+                                     material_type=self.mat_type2,
                                      attributes=[self.attr2],
                                      identifiers=[self.ident2],
                                      properties=[self.prop2],
@@ -229,6 +279,37 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
 
         assert len(data['materials']) == 2
 
+    def test_materials_with_material_type(self):
+
+        variables = {
+            'materialType': {
+                'id': self.mat_type1.id,
+            }
+        }
+        response = self.client.execute(MATERIALS_QUERY, variables)
+        if response.errors is not None:
+            print('test_materials_with_material_type response', response)
+        data = response.data
+        # print('test_materials_with_material_type data', data)
+
+        assert len(data['materials']) == 1
+
+    def test_materials_with_material_type_and_subtypes(self):
+
+        variables = {
+            'materialType': {
+                'id': self.mat_type1.id,
+            },
+            'includeSubtypes': True,
+        }
+        response = self.client.execute(MATERIALS_QUERY, variables)
+        if response.errors is not None:
+            print('test_materials_with_material_type_and_subtypes response', response)
+        data = response.data
+        # print('test_materials_with_material_type_and_subtypes data', data)
+
+        assert len(data['materials']) == 2
+
     def test_material_specifications(self):
 
         response = self.client.execute(MATERIAL_SPECIFICATIONS_QUERY, {})
@@ -238,6 +319,31 @@ class MaterialUnitTestCase(MPDGraphQLTestCase):
         # print('test_material_specifications data', data)
 
         assert len(data['materialSpecifications']) == 2
+
+    def test_material_types(self):
+
+        response = self.client.execute(MATERIAL_TYPES_QUERY, {})
+        if response.errors is not None:
+            print('test_material_types response', response)
+        data = response.data
+        # print('test_material_types data', data)
+
+        assert len(data['materialTypes']) == 3
+
+    def test_material_types_with_ancestor(self):
+
+        variables = {
+            'ancestor': {
+                'id': self.mat_type1.id,
+            }
+        }
+        response = self.client.execute(MATERIAL_TYPES_QUERY, variables)
+        if response.errors is not None:
+            print('test_material_types_with_ancestor response', response)
+        data = response.data
+        # print('test_material_types_with_ancestor data', data)
+
+        assert len(data['materialTypes']) == 2
 
     def test_update_material(self):
 

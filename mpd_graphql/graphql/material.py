@@ -10,7 +10,7 @@ from ..models import \
 
 from .attribute import AttributeInput
 from .base import NamedInput
-from .helpers import get_model_by_id_or_name, update_model_from_input
+from .helpers import filter_by_id_or_name, get_model_by_id_or_name, update_model_from_input
 from .identifier import IdentifierInput
 from .organization import OrganizationInput
 from .process import ProcessInput
@@ -37,6 +37,7 @@ class Material(DjangoObjectType):
 
 class MaterialTypeInput(NamedInput):
     description = graphene.String()
+    parent = graphene.Field(lambda: MaterialTypeInput)
 
 
 class MaterialSpecificationInput(NamedInput):
@@ -63,13 +64,27 @@ class MaterialInput(NamedInput):
 
 # noinspection PyMethodParameters,PyMethodMayBeStatic
 class MaterialQuery(graphene.ObjectType):
-    materials = graphene.List(Material)
+    materials = graphene.List(Material,
+                              material_type=graphene.Argument(MaterialTypeInput),
+                              include_subtypes=graphene.Argument(graphene.Boolean))
     material_specifications = graphene.List(MaterialSpecification,
                                             parent=graphene.Argument(MaterialSpecificationInput))
-    material_types = graphene.List(MaterialType)
+    material_types = graphene.List(MaterialType,
+                                   ancestor=graphene.Argument(MaterialTypeInput))
 
-    def resolve_materials(root, info) -> List[MaterialModel]:
-        return MaterialModel.objects.all()
+    def resolve_materials(root, info, material_type=None, include_subtypes=False) -> List[MaterialModel]:
+        q = MaterialModel.objects
+        if material_type is not None:
+            material_type_model = get_model_by_id_or_name(MaterialTypeModel,
+                                                          material_type)
+            if material_type_model is None:
+                return []
+            if include_subtypes:
+                material_types = material_type_model.descendants(include_self=True).all()
+                q = q.filter(specification__material_type__in=material_types)
+            else:
+                q = q.filter(specification__material_type=material_type_model)
+        return q.all()
 
     def resolve_material_specifications(root, info, parent=None) -> List[MaterialSpecificationModel]:
         q = MaterialSpecificationModel.objects
@@ -78,7 +93,13 @@ class MaterialQuery(graphene.ObjectType):
                 q = q.filter(parent__id=parent.id)
         return q.all()
 
-    def resolve_material_types(root, info) -> List[MaterialTypeModel]:
+    def resolve_material_types(root, info, ancestor=None) -> List[MaterialTypeModel]:
+        if ancestor:
+            material_type_model = get_model_by_id_or_name(MaterialTypeModel,
+                                                          ancestor)
+            if material_type_model is None:
+                return []
+            return material_type_model.descendants(include_self=True).all()
         return MaterialTypeModel.objects.all()
 
 

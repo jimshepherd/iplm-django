@@ -1,9 +1,10 @@
 from django.db import models
+from tree_queries.models import TreeNode
 
 from .tracker import Tracker
 
 
-class IdentifierType(models.Model):
+class IdentifierType(TreeNode):
     name = models.TextField()
     description = models.TextField()
 

@@ -10,7 +10,7 @@ from .tracker import Tracker
 from .user import User
 
 
-class ProcessType(models.Model):
+class ProcessType(TreeNode):
     name = models.TextField()
     description = models.TextField(null=True)
 
