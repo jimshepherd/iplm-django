@@ -5,7 +5,7 @@ from mpd_graphql.graphql.equipment import EquipmentQuery, EquipmentMutation
 from mpd_graphql.graphql.identifier import IdentifierQuery, IdentifierMutation
 from mpd_graphql.graphql.organization import OrganizationQuery, OrganizationMutation
 from mpd_graphql.graphql.material import MaterialQuery, MaterialMutation
-from mpd_graphql.graphql.product_specification import ProductSpecificationQuery, ProductSpecificationMutation
+# from mpd_graphql.graphql.product_specification import ProductSpecificationQuery, ProductSpecificationMutation
 from mpd_graphql.graphql.process import ProcessQuery, ProcessMutation
 from mpd_graphql.graphql.property import PropertyQuery, PropertyMutation
 from mpd_graphql.graphql.user import UserMutation, UserQuery
@@ -16,7 +16,7 @@ class Query(
     EquipmentQuery,
     IdentifierQuery,
     MaterialQuery,
-    ProductSpecificationQuery,
+    # ProductSpecificationQuery,
     OrganizationQuery,
     ProcessQuery,
     PropertyQuery,
@@ -30,7 +30,7 @@ class Mutation(
     EquipmentMutation,
     IdentifierMutation,
     MaterialMutation,
-    ProductSpecificationMutation,
+    # ProductSpecificationMutation,
     OrganizationMutation,
     ProcessMutation,
     PropertyMutation,

@@ -14,7 +14,7 @@ class IdentifierType(TreeNode):
 
 class Identifier(Tracker):
     identifier_type = models.ForeignKey(IdentifierType,
+                                        related_name='identifiers',
                                         on_delete=models.SET_NULL,
                                         null=True)
     value = models.TextField()
-

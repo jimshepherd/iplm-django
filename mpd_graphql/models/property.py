@@ -16,6 +16,7 @@ class PropertySpecification(Tracker):
     name = models.TextField()
     description = models.TextField(null=True)
     property_type = models.ForeignKey(PropertyType,
+                                      related_name='property_specifications',
                                       on_delete=models.SET_NULL,
                                       null=True)
     values = models.JSONField()
@@ -27,9 +28,11 @@ class PropertySpecification(Tracker):
 
 class Property(Tracker):
     property_type = models.ForeignKey(PropertyType,
+                                      related_name='properties',
                                       on_delete=models.SET_NULL,
                                       null=True)
     specification = models.ForeignKey(PropertySpecification,
+                                      related_name='properties',
                                       on_delete=models.SET_NULL,
                                       null=True)
 

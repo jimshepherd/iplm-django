@@ -14,7 +14,8 @@ class Organization(TreeNode, Tracker):
     name = models.TextField()
     description = models.TextField(null=True, blank=True)
     # addresses from Address
-    org_types = models.ManyToManyField(OrganizationType)
+    org_types = models.ManyToManyField(OrganizationType,
+                                       related_name='organizations')
 
 
 class Address(Tracker):

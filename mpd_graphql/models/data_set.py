@@ -13,6 +13,7 @@ class DataSeries(Tracker):
     name = models.TextField()
     description = models.TextField(null=True)
     data_set = models.ForeignKey(DataSet,
+                                 related_name='data_series',
                                  on_delete=models.CASCADE)
     # Normalize series_type if found useful
     series_type = models.TextField(null=True)

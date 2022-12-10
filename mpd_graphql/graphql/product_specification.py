@@ -16,27 +16,28 @@ from ..models import \
     PropertySpecification as PropertySpecificationModel, \
     PropertyType as PropertyTypeModel
 
-from .base import BaseInput, NamedInput
+from .base import BaseInput, NamedInput, FixResolutionMixin
 from .helpers import get_model_by_id_or_name, update_model_from_input
 from .identifier import IdentifierInput
+from .material import MaterialType
 from .process import ProcessInput, ProcessTypeInput
 from .user import UserInput
 
 
 # noinspection PyMethodParameters
-class ProductType(DjangoObjectType):
+class ProductType(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialTypeModel
 
 
 # noinspection PyMethodParameters
-class Product(DjangoObjectType):
+class Product(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialSpecificationModel
 
 
 # noinspection PyMethodParameters
-class ProducedProduct(DjangoObjectType):
+class ProducedProduct(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialModel
 
@@ -47,13 +48,13 @@ class ProducedProduct(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class MICType(DjangoObjectType):
+class MICType(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertyTypeModel
 
 
 # noinspection PyMethodParameters
-class MIC(DjangoObjectType):
+class MIC(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertySpecificationModel
 
@@ -64,7 +65,7 @@ class MIC(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class MICValue(DjangoObjectType):
+class MICValue(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertyModel
 
@@ -128,7 +129,7 @@ class MICValueInput(BaseInput):
 
 
 # noinspection PyMethodParameters
-class ProductSpecification(DjangoObjectType):
+class ProductSpecification(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessMethodModel
 
@@ -143,7 +144,7 @@ class ProductSpecification(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class ProductMeasurement(DjangoObjectType):
+class ProductMeasurement(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessModel
 
@@ -158,7 +159,7 @@ class ProductMeasurement(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class TestPlanMIC(DjangoObjectType):
+class TestPlanMIC(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessMethodStepModel
 
@@ -219,7 +220,7 @@ class TestPlanMIC(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class TestPlan(DjangoObjectType):
+class TestPlan(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessMethodModel
 

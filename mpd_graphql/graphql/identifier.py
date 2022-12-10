@@ -24,10 +24,11 @@ class Identifier(DjangoObjectType):
 
 class IdentifierTypeInput(NamedInput):
     description = graphene.String()
+    parent = graphene.InputField(lambda: IdentifierTypeInput)
 
 
 class IdentifierInput(NamedInput):
-    identifier_type = graphene.Field(IdentifierTypeInput)
+    identifier_type = graphene.InputField(IdentifierTypeInput)
     value = graphene.String()
 
 

@@ -28,9 +28,11 @@ class ProcessMethod(TreeNode, Tracker):
     version = models.TextField(null=True)
 
     process_type = models.ForeignKey(ProcessType,
+                                     related_name='process_methods',
                                      on_delete=models.SET_NULL,
                                      null=True)
     equipment_type = models.ForeignKey(EquipmentType,
+                                       related_name='process_methods',
                                        on_delete=models.SET_NULL,
                                        null=True)
     properties = SortedManyToManyField(Property)
@@ -69,19 +71,24 @@ class Process(Tracker):
     description = models.TextField(null=True)
 
     process_type = models.ForeignKey(ProcessType,
+                                     related_name='processes',
                                      on_delete=models.SET_NULL,
                                      null=True)
     method = models.ForeignKey(ProcessMethod,
+                               related_name='processes',
                                on_delete=models.SET_NULL,
                                null=True)
 
     producer = models.ForeignKey(Organization,
+                                 related_name='processes',
                                  on_delete=models.SET_NULL,
                                  null=True)
     equipment = models.ForeignKey(Equipment,
+                                  related_name='processes',
                                   on_delete=models.SET_NULL,
                                   null=True)
     operator = models.ForeignKey(User,
+                                 related_name='processes',
                                  on_delete=models.SET_NULL,
                                  null=True)
     properties = SortedManyToManyField(Property)

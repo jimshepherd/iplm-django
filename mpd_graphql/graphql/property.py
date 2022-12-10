@@ -7,24 +7,24 @@ from ..models import \
     PropertySpecification as PropertySpecificationModel, \
     PropertyType as PropertyTypeModel
 
-from .base import NamedInput
+from .base import NamedInput, FixResolutionMixin
 from .helpers import get_model_by_id_or_name, update_model_from_input
 
 
 # noinspection PyMethodParameters
-class PropertySpecification(DjangoObjectType):
+class PropertySpecification(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertySpecificationModel
 
 
 # noinspection PyMethodParameters
-class PropertyType(DjangoObjectType):
+class PropertyType(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertyTypeModel
 
 
 # noinspection PyMethodParameters
-class Property(DjangoObjectType):
+class Property(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = PropertyModel
 

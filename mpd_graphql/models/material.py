@@ -27,13 +27,18 @@ class MaterialSpecification(TreeNode, Tracker):
     version = models.TextField(null=True)
 
     material_type = models.ForeignKey(MaterialType,
+                                      related_name='material_specifications',
                                       on_delete=models.SET_NULL,
                                       null=True)
-    attributes = models.ManyToManyField(Attribute)
-    identifiers = models.ManyToManyField(Identifier)
-    properties = models.ManyToManyField(Property)
+    attributes = models.ManyToManyField(Attribute,
+                                        related_name='material_specifications')
+    identifiers = models.ManyToManyField(Identifier,
+                                         related_name='material_specifications')
+    properties = models.ManyToManyField(Property,
+                                        related_name='material_specifications')
 
     supplier = models.ForeignKey(Organization,
+                                 related_name='material_specifications',
                                  on_delete=models.SET_NULL,
                                  null=True)
 
@@ -56,6 +61,7 @@ class Material(Tracker):
     description = models.TextField(null=True)
 
     specification = models.ForeignKey(MaterialSpecification,
+                                      related_name='materials',
                                       on_delete=models.SET_NULL,
                                       null=True)
 
@@ -68,9 +74,12 @@ class Material(Tracker):
                                      on_delete=models.SET_NULL,
                                      null=True)
 
-    attributes = models.ManyToManyField(Attribute)
-    identifiers = models.ManyToManyField(Identifier)
-    properties = models.ManyToManyField(Property)
+    attributes = models.ManyToManyField(Attribute,
+                                        related_name='materials')
+    identifiers = models.ManyToManyField(Identifier,
+                                         related_name='materials')
+    properties = models.ManyToManyField(Property,
+                                        related_name='materials')
 
     def __str__(self):
         return self.name
@@ -81,4 +90,3 @@ class MaterialDataFile(Tracker):
                                  related_name='data_files',
                                  on_delete=models.CASCADE)
     file = models.FileField()
-

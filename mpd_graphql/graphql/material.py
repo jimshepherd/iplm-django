@@ -9,30 +9,40 @@ from ..models import \
     MaterialType as MaterialTypeModel
 
 from .attribute import AttributeInput
-from .base import NamedInput
+from .base import NamedInput, FixResolutionMixin
 from .helpers import filter_by_id_or_name, get_model_by_id_or_name, update_model_from_input
 from .identifier import IdentifierInput
 from .organization import OrganizationInput
-from .process import ProcessInput
-from .property import PropertyInput
+from .process import Process, ProcessInput, ProcessStep
+from .property import Property, PropertyInput
 
 
 # noinspection PyMethodParameters
-class MaterialType(DjangoObjectType):
+class MaterialType(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialTypeModel
 
 
 # noinspection PyMethodParameters
-class MaterialSpecification(DjangoObjectType):
+class MaterialSpecification(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialSpecificationModel
 
 
 # noinspection PyMethodParameters
-class Material(DjangoObjectType):
+class Material(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = MaterialModel
+
+    # Specifying props that are overridden with different GraphQL types in
+    # other GraphQL types that use the same Django model
+    process = graphene.Field(Process)
+    process_step = graphene.Field(ProcessStep)
+    properties = graphene.List(Property)
+    specification = graphene.Field(MaterialSpecification)
+
+    def resolve_properties(self, info):
+        return self.properties.all()
 
 
 class MaterialTypeInput(NamedInput):

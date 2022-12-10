@@ -16,12 +16,17 @@ class Equipment(Tracker):
     name = models.TextField()
     description = models.TextField(null=True, blank=True)
     equipment_type = models.ForeignKey(EquipmentType,
+                                       related_name='equipment',
                                        on_delete=models.SET_NULL,
                                        null=True)
     organization = models.ForeignKey(Organization,
+                                     related_name='equipment',
                                      on_delete=models.SET_NULL,
                                      null=True)
 
-    attributes = models.ManyToManyField(Attribute)
-    identifiers = models.ManyToManyField(Identifier)
-    properties = models.ManyToManyField(Property)
+    attributes = models.ManyToManyField(Attribute,
+                                        related_name='equipment')
+    identifiers = models.ManyToManyField(Identifier,
+                                         related_name='equipment')
+    properties = models.ManyToManyField(Property,
+                                        related_name='equipment')

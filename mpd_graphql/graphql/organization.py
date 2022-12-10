@@ -44,6 +44,7 @@ class OrganizationTypeInput(NamedInput):
 
 class OrganizationInput(NamedInput):
     description = graphene.String()
+    parent = graphene.InputField(lambda: OrganizationInput)
     org_types = graphene.List(OrganizationTypeInput)
     addresses = graphene.List(AddressInput)
 

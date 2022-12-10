@@ -10,7 +10,7 @@ from ..models import \
     ProcessMethod as ProcessMethodModel, \
     ProcessMethodStep as ProcessMethodStepModel
 
-from .base import NamedInput
+from .base import NamedInput, FixResolutionMixin
 from .equipment import EquipmentInput, EquipmentTypeInput
 from .helpers import get_model_by_id_or_name, update_model_from_input
 from .organization import OrganizationInput
@@ -25,19 +25,19 @@ class ProcessType(DjangoObjectType):
 
 
 # noinspection PyMethodParameters
-class ProcessMethod(DjangoObjectType):
+class ProcessMethod(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessMethodModel
 
 
 # noinspection PyMethodParameters
-class ProcessMethodStep(DjangoObjectType):
+class ProcessMethodStep(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessMethodStepModel
 
 
 # noinspection PyMethodParameters
-class Process(DjangoObjectType):
+class Process(FixResolutionMixin, DjangoObjectType):
     class Meta:
         model = ProcessModel
 

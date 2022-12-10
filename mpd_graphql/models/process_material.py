@@ -17,7 +17,8 @@ class ProcessMethodMaterialSpecification(Tracker):
     material_specification = models.ForeignKey(MaterialSpecification,
                                                related_name='process_method_material_specifications_used_in',
                                                on_delete=models.CASCADE)
-    properties = models.ManyToManyField(Property)
+    properties = models.ManyToManyField(Property,
+                                        related_name='process_method_material_specifications')
 
 
 class ProcessMaterial(Tracker):
@@ -31,4 +32,5 @@ class ProcessMaterial(Tracker):
     material = models.ForeignKey(Material,
                                  related_name='processes_used_in',
                                  on_delete=models.CASCADE)
-    properties = models.ManyToManyField(Property)
+    properties = models.ManyToManyField(Property,
+                                        related_name='process_materials')
