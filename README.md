@@ -25,22 +25,22 @@ sudo -u postgres psql
 ```
 From the psql prompt:
 ```postgresql
-CREATE DATABASE mpd;
-CREATE USER mpduser WITH ENCRYPTED PASSWORD 'mpdpassword';
-ALTER ROLE mpduser SET client_encoding TO 'utf8';
-ALTER ROLE mpduser SET default_transaction_isolation TO 'read committed';
-ALTER ROLE mpduser SET timezone TO 'UTC';
-GRANT ALL PRIVILEGES ON DATABASE mpd TO mpduser;
+CREATE DATABASE iplm;
+CREATE USER iplmuser WITH ENCRYPTED PASSWORD 'iplmpassword';
+ALTER ROLE iplmuser SET client_encoding TO 'utf8';
+ALTER ROLE iplmuser SET default_transaction_isolation TO 'read committed';
+ALTER ROLE iplmuser SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE iplm TO iplmuser;
 \q
 ```
-* Update Django settings (mpd_django/settings.py)
+* Update Django settings (iplm/settings.py)
 ```python
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mpd',
-        'USER': 'mpduser',
-        'PASSWORD': 'mpdpassword',
+        'NAME': 'iplm',
+        'USER': 'iplmuser',
+        'PASSWORD': 'iplmpassword',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
@@ -56,29 +56,29 @@ Enter admin username and password when prompted
 
 # Deployment
 Based on articles:
-* Create mpd user (optional)
+* Create iplm user (optional)
   ```shell
-   sudo adduser mpd
+   sudo adduser iplm
   ```
 * Copy project to deployment directory
-  As mpd user
+  As iplm user
   ```shell
-  sudo mkdir /srv/mpd
-  sudo chown mpd.www-data /srv/mpd
-  sudo chmod g+s /srv/mpd
-  cd /srv/mpd
-  git clone https://github.com/jimshepherd/mpd-django.git
+  sudo mkdir /srv/iplm
+  sudo chown iplm.www-data /srv/iplm
+  sudo chmod g+s /srv/iplm
+  cd /srv/iplm
+  git clone https://github.com/jimshepherd/iplm-django.git
   ```
-* Install and set up mpd-django as mpd user
+* Install and set up iplm-django as iplm user
   ```shell
-  cd mpd-django/
+  cd iplm-django/
   python3 -m venv venv
   . venv/bin/activate
   python -m pip install --upgrade pip setuptools
   pip install -e .deploy
   ```
   This command will make sure the deployment dependencies are installed
-* Update parameters in mpd_django/.env for local environment
+* Update parameters in iplm/.env for local environment
 * Set up daphne
   ```shell
   sudo cp deployment/daphne.service /etc/systemd/system/
@@ -90,8 +90,8 @@ Based on articles:
   ```
 * Set up nginx
   ```shell
-  sudo cp deployment/mpd.conf /etc/nginx/sites-available/
-  sudo ln -s /etc/nginx/sites-available/mpd.conf /etc/nginx/sites-enabled/
+  sudo cp deployment/iplm.conf /etc/nginx/sites-available/
+  sudo ln -s /etc/nginx/sites-available/iplm.conf /etc/nginx/sites-enabled/
   sudo service nginx restart
   ```
   Check that the nginx service started correctly
@@ -100,7 +100,7 @@ Based on articles:
   ```
 
 # Update Deployment
-  Run the deploy shell script as mpd user
+  Run the deploy shell script as iplm user
   ```shell
   ./deployment/deploy.sh
   ```

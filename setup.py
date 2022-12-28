@@ -1,14 +1,14 @@
 from setuptools import setup
 
 setup(
-    name='mpd_django',
+    name='iplm',
     version='0.1',
-    packages=['mpd_django', 'mpd_graphql', 'mpd_graphql.migrations'],
+    packages=['iplm', 'iplm_graphql', 'iplm_graphql.migrations'],
     url='',
     license='MIT',
     author='Jim Shepherd',
     author_email='jeshep@gmail.com',
-    description='Material and process data',
+    description='Item-Process Lifecycle Management',
     python_requires='>=3.6',
     install_requires=[
         'Django',
@@ -22,6 +22,7 @@ setup(
         'feincms3',  # For displaying trees in admin
         'django-currentuser',  # Add current user to Tracker models
         'django-sortedm2m',  # Ordered many-to-many
+        'xlsxwriter', # Parses Excel spreadsheets on upload
     ],
     extras_require={
         'test': [

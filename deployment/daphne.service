@@ -1,11 +1,11 @@
 [Unit]
-Description=MPD Daphne Service
+Description=IPLM Daphne Service
 After=network.target
 [Service]
 Type=simple
-User=mpd
+User=iplm
 Group=www-data
-WorkingDirectory=/srv/mpd/mpd-django
-ExecStart=/srv/mpd/mpd-django/venv/bin/daphne -u /srv/mpd/nginx.sock mpd_django.asgi:application
+WorkingDirectory=/srv/iplm/iplm-django
+ExecStart=/srv/iplm/iplm-django/venv/bin/daphne -u /srv/iplm/nginx.sock iplm_django.asgi:application
 [Install]
 WantedBy=multi-user.target

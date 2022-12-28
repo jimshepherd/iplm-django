@@ -8,4 +8,4 @@ __pycache__/
 *.py[cod]
 
 # Local only files
-mpd_django/.env
+iplm/.env

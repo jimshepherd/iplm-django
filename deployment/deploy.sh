@@ -2,7 +2,7 @@
 git fetch
 git pull
 
-# Update the mpd installation
+# Update the iplm installation
 . venv/bin/activate
 pip install -e .deploy
 
