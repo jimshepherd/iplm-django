@@ -8,6 +8,9 @@ class OrganizationType(models.Model):
     name = models.TextField()
     description = models.TextField()
 
+    def __str__(self):
+        return self.name
+
 
 # Add Tracker
 class Organization(TreeNode, Tracker):
@@ -16,6 +19,9 @@ class Organization(TreeNode, Tracker):
     # addresses from Address
     org_types = models.ManyToManyField(OrganizationType,
                                        related_name='organizations')
+
+    def __str__(self):
+        return self.name
 
 
 class Address(Tracker):
@@ -29,3 +35,8 @@ class Address(Tracker):
     state = models.TextField(null=True)
     country = models.TextField(null=True)
     zip = models.TextField(null=True)
+
+    def __str__(self):
+        if self.organization is not None:
+            return self.organization.__str__()
+        return self.street

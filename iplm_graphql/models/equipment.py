@@ -1,4 +1,5 @@
 from django.db import models
+from tree_queries.models import TreeNode
 
 from .attribute import Attribute
 from .identifier import Identifier
@@ -7,9 +8,12 @@ from .property import Property
 from .tracker import Tracker
 
 
-class EquipmentType(models.Model):
+class EquipmentType(TreeNode):
     name = models.TextField()
     description = models.TextField()
+
+    def __str__(self):
+        return self.name
 
 
 class Equipment(Tracker):
@@ -30,3 +34,7 @@ class Equipment(Tracker):
                                          related_name='equipment')
     properties = models.ManyToManyField(Property,
                                         related_name='equipment')
+
+    def __str__(self):
+        return self.name
+

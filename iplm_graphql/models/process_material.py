@@ -20,6 +20,12 @@ class ProcessMethodMaterialSpecification(Tracker):
     properties = models.ManyToManyField(Property,
                                         related_name='process_method_material_specifications')
 
+    def __str__(self):
+        if self.process_method is not None and self.material_specification is not None:
+            return f'{self.process_method.__str__()}' \
+                   f'-{self.material_specification.__str__()}'
+        return ''
+
 
 class ProcessMaterial(Tracker):
     process = models.ForeignKey(Process,
@@ -34,3 +40,8 @@ class ProcessMaterial(Tracker):
                                  on_delete=models.CASCADE)
     properties = models.ManyToManyField(Property,
                                         related_name='process_materials')
+
+    def __str__(self):
+        if self.process is not None and self.material is not None:
+            return f'{self.process.__str__()}-{self.material.__str__()}'
+        return ''

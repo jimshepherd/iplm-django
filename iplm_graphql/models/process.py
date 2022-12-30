@@ -132,6 +132,13 @@ class ProcessDataFile(Tracker):
                                 on_delete=models.CASCADE)
     file = models.FileField()
 
+    def __str__(self):
+        if self.file is not None:
+            return self.file.__str__()
+        if self.process is not None:
+            return self.process.__str__()
+        return ''
+
 
 class ProcessDataSet(Tracker):
     process = models.ForeignKey(Process,
@@ -145,3 +152,15 @@ class ProcessDataSet(Tracker):
     file = models.ForeignKey(ProcessDataFile,
                              on_delete=models.SET_NULL,
                              null=True)
+
+    def __str__(self):
+        if self.data_set is not None:
+            return self.data_set.__str__()
+        if self.process is not None:
+            return self.process.__str__()
+        if self.step is not None:
+            return self.step.__str__()
+        if self.file is not None:
+            return self.file.__str__()
+        return ''
+

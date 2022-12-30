@@ -55,6 +55,13 @@ class MaterialSpecificationDataFile(Tracker):
                                       on_delete=models.CASCADE)
     file = models.FileField()
 
+    def __str__(self):
+        if self.file is not None:
+            return self.file.name
+        if self.specification is not None:
+            return self.specification.__str__()
+        return ''
+
 
 class Material(Tracker):
     name = models.TextField()
@@ -90,3 +97,10 @@ class MaterialDataFile(Tracker):
                                  related_name='data_files',
                                  on_delete=models.CASCADE)
     file = models.FileField()
+
+    def __str__(self):
+        if self.file is not None:
+            return self.file.name
+        if self.material is not None:
+            return self.material.__str__()
+        return ''

@@ -18,3 +18,8 @@ class Identifier(Tracker):
                                         on_delete=models.SET_NULL,
                                         null=True)
     value = models.TextField()
+
+    def __str__(self):
+        if self.identifier_type is not None:
+            return f'{self.identifier_type.__str__()}={self.value}'
+        return self.value

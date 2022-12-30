@@ -42,8 +42,19 @@ class Property(Tracker):
     unit = models.TextField(null=True)
 
     def __str__(self):
+        name = ''
         if self.property_type is not None:
-            return self.property_type.name
-        if self.specification is not None:
-            return self.specification.__str__()
-        return ''
+            name = self.property_type.__str__()
+        elif self.specification is not None:
+            name = self.specification.property_type.__str__()
+        value = ''
+        if self.int_value is not None:
+            value = self.int_value
+        elif self.float_value is not None:
+            value = self.float_value
+        elif self.text_value is not None:
+            value = self.text_value
+        unit = ''
+        if self.unit is not None:
+            unit = self.unit
+        return f'{name}={value} {unit}'
