@@ -14,7 +14,7 @@ setup(
         'Django',
         'django-tree-queries',  # Tree models
         'psycopg2',
-        'graphene-django==3.0.0b7',  # 3.0+ required for Django 4
+        'graphene-django',
         'PyJWT',
         'django-graphql-jwt',
         'django-cors-headers',
@@ -22,7 +22,7 @@ setup(
         'feincms3',  # For displaying trees in admin
         'django-currentuser',  # Add current user to Tracker models
         'django-sortedm2m',  # Ordered many-to-many
-        'xlsxwriter', # Parses Excel spreadsheets on upload
+        'xlsxwriter',  # Parses Excel spreadsheets on upload
     ],
     extras_require={
         'test': [
@@ -31,6 +31,12 @@ setup(
         ],
         'deploy': [
             'daphne',
+        ],
+        'google': [
+            'django-storages[google]',
+            'google-cloud-secret-manager',
+            'gunicorn',
+
         ]
     },
     dependency_links=[

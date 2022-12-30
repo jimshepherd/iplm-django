@@ -111,3 +111,7 @@ Add address of computer django on which django is running to the ALLOWED_HOSTS e
 ```shell
 ./manage.py runserver 0.0.0.0:8000
 ```
+
+# Deploy on Google Cloud
+* Follow instructions at https://cloud.google.com/python/django/run
+* 
